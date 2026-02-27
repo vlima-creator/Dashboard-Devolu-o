@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from utils.parser import processar_arquivos
 from utils.metricas import calcular_metricas, calcular_qualidade_arquivo
 from utils.export import exportar_xlsx
+from utils.analises import analisar_frete, analisar_motivos, analisar_ads, analisar_skus, simular_reducao
 
 # Configuração da página
 st.set_page_config(
@@ -266,23 +267,181 @@ else:
     
     # TAB 4: FRETE
     with tab4:
-        st.info("📦 Análise de Frete - Componente em desenvolvimento")
+        st.subheader("🚚 Análise de Frete e Forma de Entrega")
+        
+        janela_frete = st.slider("Período (dias)", 30, 180, 180, key="frete_janela")
+        
+        df_frete = analisar_frete(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_frete)
+        
+        if len(df_frete) > 0:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Gráfico de taxa por forma de entrega
+                fig = px.bar(df_frete, x='Forma de Entrega', y='Taxa (%)', 
+                            title='Taxa de Devolução por Forma de Entrega',
+                            color='Taxa (%)', color_continuous_scale='Reds')
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                # Gráfico de impacto financeiro
+                fig = px.bar(df_frete, x='Forma de Entrega', y='Impacto (R$)',
+                            title='Impacto Financeiro por Forma de Entrega',
+                            color='Impacto (R$)', color_continuous_scale='Blues')
+                st.plotly_chart(fig, use_container_width=True)
+            
+            st.dataframe(df_frete, use_container_width=True, hide_index=True)
+        else:
+            st.warning("Sem dados disponíveis para análise de frete")
     
     # TAB 5: MOTIVOS
     with tab5:
-        st.info("🔍 Análise de Motivos - Componente em desenvolvimento")
+        st.subheader("🔍 Análise de Motivos de Devolução")
+        
+        janela_motivos = st.slider("Período (dias)", 30, 180, 180, key="motivos_janela")
+        
+        df_motivos = analisar_motivos(data['matriz'], data['full'], data['max_date'], janela_motivos)
+        
+        if len(df_motivos) > 0:
+            col1, col2 = st.columns([2, 1])
+            
+            with col1:
+                # Gráfico de pizza
+                fig = px.pie(df_motivos, values='Quantidade', names='Motivo',
+                            title='Distribuição de Motivos de Devolução')
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                # Tabela
+                st.dataframe(df_motivos, use_container_width=True, hide_index=True)
+        else:
+            st.warning("Sem dados disponíveis para análise de motivos")
     
     # TAB 6: ADS
     with tab6:
-        st.info("📢 Análise de Ads - Componente em desenvolvimento")
+        st.subheader("📢 Análise de Vendas por Publicidade")
+        
+        janela_ads = st.slider("Período (dias)", 30, 180, 180, key="ads_janela")
+        
+        df_ads = analisar_ads(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_ads)
+        
+        if len(df_ads) > 0:
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric("Com Publicidade", f"{df_ads[df_ads['Tipo'].str.contains('Com')]['Vendas'].values[0] if any(df_ads['Tipo'].str.contains('Com')) else 0:,}")
+            with col2:
+                st.metric("Sem Publicidade", f"{df_ads[df_ads['Tipo'].str.contains('Sem')]['Vendas'].values[0] if any(df_ads['Tipo'].str.contains('Sem')) else 0:,}")
+            with col3:
+                st.metric("Total de Vendas", f"{df_ads['Vendas'].sum():,}")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Gráfico de taxa
+                fig = px.bar(df_ads, x='Tipo', y='Taxa (%)',
+                            title='Taxa de Devolução por Tipo de Publicidade',
+                            color='Taxa (%)', color_continuous_scale='Reds')
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                # Gráfico de impacto
+                fig = px.bar(df_ads, x='Tipo', y='Impacto (R$)',
+                            title='Impacto Financeiro por Tipo de Publicidade',
+                            color='Impacto (R$)', color_continuous_scale='Blues')
+                st.plotly_chart(fig, use_container_width=True)
+            
+            st.dataframe(df_ads, use_container_width=True, hide_index=True)
+        else:
+            st.warning("Sem dados disponíveis para análise de publicidade")
     
     # TAB 7: SKUS
     with tab7:
-        st.info("📊 Análise de SKUs - Componente em desenvolvimento")
+        st.subheader("📊 Análise de SKUs com Maior Risco")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            janela_skus = st.slider("Período (dias)", 30, 180, 180, key="skus_janela")
+        with col2:
+            top_n = st.slider("Top N SKUs", 5, 20, 10, key="skus_top")
+        
+        df_skus = analisar_skus(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_skus, top_n)
+        
+        if len(df_skus) > 0:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Gráfico de taxa
+                fig = px.bar(df_skus, x='SKU', y='Taxa (%)',
+                            title='Taxa de Devolução por SKU',
+                            color='Taxa (%)', color_continuous_scale='Reds')
+                fig.update_xaxes(tickangle=-45)
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                # Gráfico de impacto
+                fig = px.bar(df_skus, x='SKU', y='Impacto (R$)',
+                            title='Impacto Financeiro por SKU',
+                            color='Impacto (R$)', color_continuous_scale='Blues')
+                fig.update_xaxes(tickangle=-45)
+                st.plotly_chart(fig, use_container_width=True)
+            
+            st.dataframe(df_skus, use_container_width=True, hide_index=True)
+        else:
+            st.warning("Sem dados disponíveis para análise de SKUs")
     
     # TAB 8: SIMULADOR
     with tab8:
-        st.info("🎮 Simulador - Componente em desenvolvimento")
+        st.subheader("🎮 Simulador de Redução de Devoluções")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            janela_sim = st.slider("Período (dias)", 30, 180, 180, key="sim_janela")
+        with col2:
+            reducao = st.slider("Redução desejada (%)", 0, 100, 10, key="sim_reducao")
+        
+        resultado = simular_reducao(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_sim, reducao)
+        
+        # Mostrar cenários
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Vendas Totais", f"{resultado['vendas_totais']:,}")
+        with col2:
+            st.metric("Faturamento Total", f"R$ {resultado['faturamento_total']/1000:.1f}k")
+        with col3:
+            st.metric("Economia Potencial", f"R$ {resultado['economia']/1000:.1f}k", delta=f"{reducao}%")
+        
+        st.markdown("---")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("📊 Cenário Atual")
+            st.metric("Devoluções", resultado['cenario_atual']['devolucoes'])
+            st.metric("Taxa de Devolução", f"{resultado['cenario_atual']['taxa']:.2f}%")
+            st.metric("Impacto Financeiro", f"R$ {resultado['cenario_atual']['impacto']/1000:.1f}k")
+        
+        with col2:
+            st.subheader("🎯 Cenário Simulado (-{:.0f}%)".format(reducao))
+            st.metric("Devoluções", resultado['cenario_simulado']['devolucoes'])
+            st.metric("Taxa de Devolução", f"{resultado['cenario_simulado']['taxa']:.2f}%")
+            st.metric("Impacto Financeiro", f"R$ {resultado['cenario_simulado']['impacto']/1000:.1f}k")
+        
+        # Gráfico de comparação
+        comparacao_data = {
+            'Cenário': ['Atual', 'Simulado'],
+            'Devoluções': [resultado['cenario_atual']['devolucoes'], resultado['cenario_simulado']['devolucoes']],
+            'Taxa (%)': [resultado['cenario_atual']['taxa'], resultado['cenario_simulado']['taxa']],
+        }
+        df_comparacao = pd.DataFrame(comparacao_data)
+        
+        fig = px.bar(df_comparacao, x='Cenário', y=['Devoluções', 'Taxa (%)'],
+                    title='Comparação de Cenários',
+                    barmode='group')
+        st.plotly_chart(fig, use_container_width=True)
     
     # Export
     st.markdown("---")
