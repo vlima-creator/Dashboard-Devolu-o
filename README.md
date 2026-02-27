@@ -1,136 +1,169 @@
-# Dashboard de Devoluções BlueWorks
+# Dashboard Vendas x Devoluções
 
-Dashboard profissional em **Streamlit** para análise de devoluções vs vendas com dados de 180 dias.
+Dashboard web profissional para análise de vendas e devoluções do Mercado Livre (BR) com upload de arquivos Excel, processamento client-side e exportação de resultados.
 
-## 📊 Funcionalidades
+## 🎯 Funcionalidades
 
-O dashboard oferece 6 visualizações principais:
+### Upload e Processamento
+- ✅ Upload de 2 arquivos Excel (Vendas + Devoluções)
+- ✅ Validação automática de formato
+- ✅ Botão "Carregar Exemplo" com dados pré-carregados
+- ✅ Processamento 100% client-side (sem servidor)
 
-### 1. **📈 Resumo Executivo**
-- KPIs principais: Total de Vendas, Taxa de Devolução, Impacto Financeiro, Custo de Devolução
-- Gráfico de tendência de devoluções por período
-- Classificação de devoluções (Saudável, Crítica, Neutra)
+### Análise de Dados
+- ✅ **Resumo Executivo**: KPIs principais e qualidade do arquivo
+- ✅ **Janelas de Tempo**: Análise por períodos (30, 60, 90, 120, 150, 180 dias)
+- ✅ **Matriz vs Full**: Comparação de canais
+- ✅ **Frete**: Análise por forma de entrega
+- ✅ **Motivos**: Distribuição de motivos de devolução
+- ✅ **Ads**: Análise de vendas por publicidade
+- ✅ **SKUs**: Ranking de SKUs por risco
+- ✅ **Simulador**: Simulação de impacto com redução de taxa
 
-### 2. **🎯 Análise por Período**
-- Seletor de período (30, 60, 90, 120, 150, 180 dias)
-- Comparação: Vendas vs Devoluções
-- Análise de impacto financeiro
-- Tabela completa de detalhes
+### Métricas Calculadas
+- Taxa de devolução
+- Impacto financeiro
+- Perda total e parcial
+- Classificação (Saudável/Crítica/Neutra)
+- Qualidade do arquivo
+- Score de risco por SKU
 
-### 3. **📦 SKUs em Risco**
-- Top 10 SKUs por risco financeiro
-- Filtro por período de análise (30 a 180 dias)
-- Métricas de taxa de devolução e impacto
-
-### 4. **🔍 Motivos de Devolução**
-- Distribuição dos 11 motivos de devolução
-- Gráfico de barras com percentuais
-- Tabela detalhada de motivos
-
-### 5. **🚚 Canais de Entrega**
-- Análise por forma de entrega (Correios, Mercado Envios, etc.)
-- Taxa de devolução por canal
-- Comparação Full vs Matriz
-- Impacto financeiro por canal
-
-### 6. **💰 Impacto Financeiro**
-- Top 10 SKUs por impacto financeiro
-- Top 10 SKUs por taxa de devolução
-- Detalhamento de perdas financeiras
+### Export
+- ✅ Exportar resultados em XLSX
+- ✅ Múltiplas abas com dados consolidados
+- ✅ Dados brutos para análise adicional
 
 ## 🚀 Como Usar
 
-### Instalação Local
+### Localmente
 
-1. **Clone o repositório:**
 ```bash
-git clone https://github.com/vlima-creator/Dashboard-Devolu-o.git
-cd Dashboard-Devolu-o
+# Instalar dependências
+npm install
+
+# Executar em desenvolvimento
+npm run dev
+
+# Build para produção
+npm run build
+
+# Preview do build
+npm run preview
 ```
 
-2. **Instale as dependências:**
+Acesse: `http://localhost:5173`
+
+### Deploy no Vercel
+
+#### Opção 1: Via GitHub (Recomendado)
+
+1. Acesse [Vercel](https://vercel.com)
+2. Clique em "New Project"
+3. Selecione o repositório `vlima-creator/Dashboard-Devolu-o`
+4. Vercel detectará automaticamente:
+   - Framework: Vite
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+5. Clique em "Deploy"
+
+#### Opção 2: Via CLI
+
 ```bash
-pip install streamlit pandas openpyxl plotly numpy
+# Instalar Vercel CLI
+npm install -g vercel
+
+# Fazer deploy
+vercel
+
+# Deploy em produção
+vercel --prod
 ```
 
-3. **Execute o dashboard:**
-```bash
-streamlit run app.py
-```
+#### Opção 3: Automático
 
-4. **Acesse no navegador:**
-```
-http://localhost:8501
-```
+Cada push para `main` fará deploy automático no Vercel.
 
-### Deploy no Streamlit Cloud
-
-1. **Faça push para o GitHub** (já feito ✓)
-
-2. **Acesse [Streamlit Cloud](https://streamlit.io/cloud)**
-
-3. **Clique em "New app"** e selecione:
-   - Repository: `vlima-creator/Dashboard-Devolu-o`
-   - Branch: `main`
-   - Main file path: `app.py`
-
-4. **Deploy automático!** 🎉
-
-## 📁 Estrutura de Arquivos
+## 📁 Estrutura do Projeto
 
 ```
 Dashboard-Devolu-o/
-├── app.py                                          # Aplicação Streamlit
-├── Analise_Devolucoes_x_Vendas_BlueWorks_6m.xlsx # Dados (15 abas)
-├── README.md                                       # Este arquivo
-└── ... (arquivos do projeto React anterior)
+├── src/
+│   ├── pages/
+│   │   ├── Index.tsx          # Página de upload
+│   │   └── Dashboard.tsx      # Dashboard com abas
+│   ├── components/
+│   │   ├── tabs/              # Componentes das 8 abas
+│   │   └── ui/                # Componentes shadcn/ui
+│   ├── lib/
+│   │   ├── parser.ts          # Parser de Excel
+│   │   ├── metricas.ts        # Cálculo de métricas
+│   │   └── export.ts          # Export XLSX
+│   ├── types/
+│   │   └── data.ts            # Tipos TypeScript
+│   └── App.tsx
+├── public/
+│   └── examples/              # Arquivos de exemplo
+│       ├── vendas_exemplo.xlsx
+│       └── devolucoes_exemplo.xlsx
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+└── vercel.json
 ```
 
-## 📊 Dados
+## 📊 Formato dos Arquivos
 
-A planilha `Analise_Devolucoes_x_Vendas_BlueWorks_6m.xlsx` contém 15 abas:
+### Arquivo de Vendas
+Aba: `Vendas BR`
 
-- **Resumo_Janelas**: Métricas principais em períodos de 30-180 dias
-- **Saudavel_vs_Critica_180d**: Classificação de devoluções
-- **Matriz_vs_Full_180d**: Comparação de canais
-- **Frete_180d**: Análise por forma de entrega
-- **Motivos_180d**: Distribuição de motivos
-- **Top10_Devol_Qtd_180d**: Top 10 por quantidade
-- **Top10_Taxa_180d**: Top 10 por taxa
-- **Top10_Perdas_180d**: Top 10 por perdas financeiras
-- **Top10_Risco_180d**: Top 10 por risco
-- **Risco_SKU_30d a 180d**: Análise de risco por período
+Colunas obrigatórias:
+- N.º de venda
+- Data da venda
+- SKU
+- Receita por produtos (BRL)
+- Receita por envio (BRL)
+- Custo de envio com base nas medidas e peso declarados
+- Tarifa de venda e impostos (BRL)
+- Venda por publicidade
+
+### Arquivo de Devoluções
+Abas: `devoluções vendas matriz` e `devoluções vendas full`
+
+Colunas obrigatórias:
+- N.º de venda
+- Cancelamentos e reembolsos (BRL)
+- Tarifa de venda e impostos (BRL)
+- Custo de envio com base nas medidas e peso declarados
+- Estado
+- Motivo do resultado
+- Forma de entrega
+- Canal
 
 ## 🛠️ Tecnologias
 
-- **Streamlit**: Framework web para Python
-- **Pandas**: Manipulação de dados
-- **Plotly**: Gráficos interativos
-- **openpyxl**: Leitura de arquivos Excel
+- **React 19** + TypeScript
+- **Vite** - Build tool
+- **Tailwind CSS** - Styling
+- **shadcn/ui** - UI Components
+- **Recharts** - Gráficos
+- **XLSX** - Leitura/escrita de Excel
+- **Wouter** - Roteamento
 
-## 📈 Métricas Principais
+## 🔒 Privacidade
 
-| Métrica | Valor (180 dias) |
-|---------|-----------------|
-| Total de Vendas | 7.857 |
-| Unidades Vendidas | 8.196 |
-| Total de Devoluções | 621 |
-| Taxa de Devolução | 7,90% |
-| Impacto Financeiro | R$ -41.690,57 |
-| Custo de Devolução | R$ -11.783,66 |
+- ✅ Processamento 100% client-side
+- ✅ Nenhum dado é enviado para servidor
+- ✅ Nenhuma autenticação necessária
+- ✅ Dados não são armazenados
 
-## 💡 Dicas de Uso
+## 📝 Licença
 
-1. **Navegação**: Use o menu lateral para trocar entre visualizações
-2. **Filtros**: Selecione períodos diferentes para análise comparativa
-3. **Gráficos**: Interaja com os gráficos (zoom, pan, download)
-4. **Tabelas**: Ordene colunas e busque por valores
-5. **Exportação**: Baixe dados em CSV diretamente das tabelas
+MIT
 
-## 📞 Suporte
+## 🤝 Contribuições
 
-Para dúvidas ou sugestões, abra uma issue no repositório.
+Contribuições são bem-vindas! Abra uma issue ou pull request.
 
 ---
 
-**Desenvolvido com ❤️ usando Streamlit**
+**Desenvolvido com ❤️ para análise de Mercado Livre**
