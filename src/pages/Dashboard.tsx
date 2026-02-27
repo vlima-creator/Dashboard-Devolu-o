@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Download } from 'lucide-react';
 import { ProcessedData } from '@/types/data';
 import { calcularMetricas, calcularQualidadeArquivo } from '@/lib/metricas';
+import { exportarResultados } from '@/lib/export';
 import ResumoTab from '@/components/tabs/ResumoTab';
 import JanelasTab from '@/components/tabs/JanelasTab';
 import MatrizFullTab from '@/components/tabs/MatrizFullTab';
@@ -39,9 +41,18 @@ export default function Dashboard({ data, onReset }: DashboardProps) {
               Janela padrão: 180 dias
             </p>
           </div>
-          <Button onClick={onReset} variant="outline">
-            ← Voltar
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => exportarResultados(data)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exportar XLSX
+            </Button>
+            <Button onClick={onReset} variant="outline">
+              ← Voltar
+            </Button>
+          </div>
         </div>
 
         {/* Info Banner */}
