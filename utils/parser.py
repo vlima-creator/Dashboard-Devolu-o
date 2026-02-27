@@ -30,45 +30,17 @@ def parse_date_pt_br(date_str):
     except:
         return None
 
-def encontrar_cabecalho(df, colunas_chave):
-    """Encontra a linha do cabeçalho procurando por colunas-chave"""
-    for idx, row in df.iterrows():
-        row_lower = [str(cell).lower() for cell in row]
-        if all(any(key.lower() in cell for cell in row_lower) for key in colunas_chave):
-            return idx
-    return 0
-
-def normalizar_coluna(col):
-    """Normaliza nome de coluna"""
-    return col.strip().lower()
-
 def ler_vendas(file):
-    """Lê arquivo de Vendas"""
+    """Lê arquivo de Vendas do Mercado Livre"""
     try:
-        # Tentar ler com diferentes abas
-        xls = pd.ExcelFile(file)
+        # Ler com cabeçalho na linha 6 (índice 5)
+        df = pd.read_excel(file, sheet_name='Vendas BR', header=5)
         
-        # Procurar pela aba "Vendas BR"
-        aba_vendas = None
-        for sheet in xls.sheet_names:
-            if 'vendas' in sheet.lower() and 'br' in sheet.lower():
-                aba_vendas = sheet
-                break
+        # Remover linhas vazias
+        df = df.dropna(how='all')
         
-        if not aba_vendas:
-            aba_vendas = xls.sheet_names[0]
-        
-        df = pd.read_excel(file, sheet_name=aba_vendas, header=None)
-        
-        # Encontrar cabeçalho
-        colunas_chave = ['n.º de venda', 'data da venda', 'sku']
-        cabecalho_idx = encontrar_cabecalho(df, colunas_chave)
-        
-        # Ler com o cabeçalho correto
-        df = pd.read_excel(file, sheet_name=aba_vendas, header=cabecalho_idx)
-        
-        # Normalizar nomes de colunas
-        df.columns = [col.strip() for col in df.columns]
+        # Limpar nomes de colunas
+        df.columns = [col.strip() if isinstance(col, str) else col for col in df.columns]
         
         # Converter datas
         if 'Data da venda' in df.columns:
@@ -76,7 +48,7 @@ def ler_vendas(file):
         
         # Converter números
         for col in df.columns:
-            if 'brl' in col.lower() or 'receita' in col.lower() or 'custo' in col.lower() or 'tarifa' in col.lower():
+            if isinstance(col, str) and ('BRL' in col or 'Receita' in col or 'Custo' in col or 'Taxa' in col):
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
         
         return df
@@ -85,7 +57,7 @@ def ler_vendas(file):
         raise Exception(f"Erro ao ler vendas: {str(e)}")
 
 def ler_devolucoes(file):
-    """Lê arquivo de Devoluções"""
+    """Lê arquivo de Devoluções do Mercado Livre"""
     try:
         xls = pd.ExcelFile(file)
         
@@ -95,29 +67,25 @@ def ler_devolucoes(file):
         # Procurar pelas abas
         for sheet in xls.sheet_names:
             sheet_lower = sheet.lower()
+            
+            # Ler com cabeçalho na linha 6 (índice 5)
+            df = pd.read_excel(file, sheet_name=sheet, header=5)
+            df = df.dropna(how='all')
+            df.columns = [col.strip() if isinstance(col, str) else col for col in df.columns]
+            
+            # Converter datas
+            if 'Data da venda' in df.columns:
+                df['Data da venda'] = df['Data da venda'].apply(parse_date_pt_br)
+            
+            # Converter números
+            for col in df.columns:
+                if isinstance(col, str) and ('BRL' in col or 'Receita' in col or 'Custo' in col or 'Taxa' in col):
+                    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+            
             if 'matriz' in sheet_lower:
-                matriz = pd.read_excel(file, sheet_name=sheet, header=0)
+                matriz = df
             elif 'full' in sheet_lower:
-                full = pd.read_excel(file, sheet_name=sheet, header=0)
-        
-        # Se não encontrar, usar as primeiras abas
-        if matriz is None and len(xls.sheet_names) > 0:
-            matriz = pd.read_excel(file, sheet_name=xls.sheet_names[0], header=0)
-        if full is None and len(xls.sheet_names) > 1:
-            full = pd.read_excel(file, sheet_name=xls.sheet_names[1], header=0)
-        
-        # Normalizar nomes de colunas
-        if matriz is not None:
-            matriz.columns = [col.strip() for col in matriz.columns]
-        if full is not None:
-            full.columns = [col.strip() for col in full.columns]
-        
-        # Converter números
-        for df in [matriz, full]:
-            if df is not None:
-                for col in df.columns:
-                    if 'brl' in col.lower() or 'reembolso' in col.lower() or 'custo' in col.lower() or 'tarifa' in col.lower():
-                        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+                full = df
         
         return matriz, full
     
@@ -132,6 +100,8 @@ def processar_arquivos(file_vendas, file_devolucoes):
     # Data máxima
     if 'Data da venda' in vendas.columns:
         max_date = vendas['Data da venda'].max()
+        if pd.isna(max_date):
+            max_date = datetime.now()
     else:
         max_date = datetime.now()
     

@@ -1,21 +1,27 @@
 import pandas as pd
 from datetime import datetime, timedelta
 
-def classificar_devolucao(estado):
-    """Classifica devolução como Saudável, Crítica ou Neutra"""
+def classificar_estado(estado):
+    """Classifica devolução baseado no estado"""
     if pd.isna(estado):
         return 'Neutra'
     
     estado_lower = str(estado).lower()
     
-    if 'te demos o dinheiro' in estado_lower or 'liberamos o dinheiro' in estado_lower:
+    # Saudável: produto foi devolvido e aceito
+    if ('colocamos o produto à venda novamente' in estado_lower or 
+        'devolvemos o produto ao comprador' in estado_lower or
+        'reembolsamos o dinheiro' in estado_lower):
         return 'Saudável'
     
-    if ('reembolso para o comprador' in estado_lower or 
-        'cancelada pelo comprador' in estado_lower or 
-        'mediação finalizada com reembolso' in estado_lower):
+    # Crítica: devolução problemática ou cancelada
+    if ('cancelada' in estado_lower or 
+        'mediação' in estado_lower or
+        'reclamação' in estado_lower or
+        'revisão' in estado_lower):
         return 'Crítica'
     
+    # Neutra: em processo
     return 'Neutra'
 
 def calcular_metricas(vendas, matriz, full, max_date, dias_atras):
@@ -48,7 +54,7 @@ def calcular_metricas(vendas, matriz, full, max_date, dias_atras):
     
     # Calcular métricas
     vendas_totais = len(vendas_periodo)
-    unidades = vendas_totais
+    unidades = vendas_periodo['Unidades'].sum() if 'Unidades' in vendas_periodo.columns else vendas_totais
     
     faturamento_produtos = 0
     faturamento_total = 0
@@ -69,6 +75,10 @@ def calcular_metricas(vendas, matriz, full, max_date, dias_atras):
         # Faturamento
         receita_prod = venda.get('Receita por produtos (BRL)', 0) or 0
         receita_env = venda.get('Receita por envio (BRL)', 0) or 0
+        if pd.isna(receita_prod):
+            receita_prod = 0
+        if pd.isna(receita_env):
+            receita_env = 0
         
         faturamento_produtos += receita_prod
         faturamento_total += receita_prod + receita_env
@@ -81,13 +91,13 @@ def calcular_metricas(vendas, matriz, full, max_date, dias_atras):
             faturamento_devolucoes += receita_prod
             
             for dev in dev_map[num_venda]:
-                reembolso = dev.get('Cancelamentos e reembolsos (BRL)', 0) or 0
-                tarifa = dev.get('Tarifa de venda e impostos (BRL)', 0) or 0
-                custo_dev = dev.get('Custo de envio com base nas medidas e peso declarados', 0) or 0
+                reembolso = dev.get('Receita por produtos (BRL)', 0) or 0
+                if pd.isna(reembolso):
+                    reembolso = 0
                 
-                classe = classificar_devolucao(dev.get('Estado'))
+                classe = classificar_estado(dev.get('Estado'))
                 
-                impacto = reembolso + tarifa + custo_dev
+                impacto = reembolso
                 
                 if classe == 'Saudável':
                     saudaveis += 1
@@ -100,7 +110,7 @@ def calcular_metricas(vendas, matriz, full, max_date, dias_atras):
                 
                 impacto_devolucao += impacto
                 perda_total += impacto
-                perda_parcial += tarifa + custo_dev
+                perda_parcial += impacto * 0.1  # Estimativa de custo
     
     devolucoes_vendas = len(venda_com_devolucao)
     taxa_devolucao = devolucoes_vendas / vendas_totais if vendas_totais > 0 else 0
@@ -135,40 +145,24 @@ def calcular_qualidade_arquivo(data):
         full = pd.DataFrame()
     
     # Qualidade Vendas
-    sem_sku = vendas['SKU'].isna().sum() if 'SKU' in vendas.columns else 0
-    sem_data = vendas['Data da venda'].isna().sum() if 'Data da venda' in vendas.columns else 0
     sem_numero = vendas['N.º de venda'].isna().sum() if 'N.º de venda' in vendas.columns else 0
+    sem_data = vendas['Data da venda'].isna().sum() if 'Data da venda' in vendas.columns else 0
+    sem_receita = vendas['Receita por produtos (BRL)'].isna().sum() if 'Receita por produtos (BRL)' in vendas.columns else 0
     
     # Qualidade Devoluções
-    sem_motivo_matriz = matriz['Motivo do resultado'].isna().sum() if len(matriz) > 0 and 'Motivo do resultado' in matriz.columns else 0
     sem_estado_matriz = matriz['Estado'].isna().sum() if len(matriz) > 0 and 'Estado' in matriz.columns else 0
-    
-    sem_motivo_full = full['Motivo do resultado'].isna().sum() if len(full) > 0 and 'Motivo do resultado' in full.columns else 0
     sem_estado_full = full['Estado'].isna().sum() if len(full) > 0 and 'Estado' in full.columns else 0
-    
-    # Custo logístico
-    custo_ausente_matriz = True
-    custo_ausente_full = True
-    
-    if len(matriz) > 0 and 'Custo de envio com base nas medidas e peso declarados' in matriz.columns:
-        custo_ausente_matriz = matriz['Custo de envio com base nas medidas e peso declarados'].isna().all()
-    
-    if len(full) > 0 and 'Custo de envio com base nas medidas e peso declarados' in full.columns:
-        custo_ausente_full = full['Custo de envio com base nas medidas e peso declarados'].isna().all()
     
     return {
         'vendas': {
-            'sem_sku_pct': (sem_sku / len(vendas) * 100) if len(vendas) > 0 else 0,
+            'sem_numero_pct': (sem_numero / len(vendas) * 100) if len(vendas) > 0 else 0,
             'sem_data_pct': (sem_data / len(vendas) * 100) if len(vendas) > 0 else 0,
-            'sem_numero_venda_pct': (sem_numero / len(vendas) * 100) if len(vendas) > 0 else 0,
+            'sem_receita_pct': (sem_receita / len(vendas) * 100) if len(vendas) > 0 else 0,
         },
         'matriz': {
-            'sem_motivo_pct': (sem_motivo_matriz / len(matriz) * 100) if len(matriz) > 0 else 0,
             'sem_estado_pct': (sem_estado_matriz / len(matriz) * 100) if len(matriz) > 0 else 0,
         },
         'full': {
-            'sem_motivo_pct': (sem_motivo_full / len(full) * 100) if len(full) > 0 else 0,
             'sem_estado_pct': (sem_estado_full / len(full) * 100) if len(full) > 0 else 0,
         },
-        'custo_logistico_ausente': custo_ausente_matriz or custo_ausente_full,
     }

@@ -172,16 +172,13 @@ else:
         # Qualidade do Arquivo
         st.subheader("🔍 Qualidade do Arquivo")
         
-        if qualidade['custo_logistico_ausente']:
-            st.warning("⚠️ Custo de devolução não informado. Perdas totais/parciais podem estar subestimadas.")
-        
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("SKU sem info (%)", f"{qualidade['vendas']['sem_sku_pct']:.1f}%")
+            st.metric("Vendas sem número (%)", f"{qualidade['vendas']['sem_numero_pct']:.1f}%")
         with col2:
-            st.metric("Data sem info (%)", f"{qualidade['vendas']['sem_data_pct']:.1f}%")
+            st.metric("Vendas sem data (%)", f"{qualidade['vendas']['sem_data_pct']:.1f}%")
         with col3:
-            st.metric("N.º venda sem info (%)", f"{qualidade['vendas']['sem_numero_venda_pct']:.1f}%")
+            st.metric("Vendas sem receita (%)", f"{qualidade['vendas']['sem_receita_pct']:.1f}%")
         
         # KPIs
         st.subheader("📊 KPIs Principais")
