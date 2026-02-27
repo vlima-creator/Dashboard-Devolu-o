@@ -1,6 +1,6 @@
 # Dashboard Vendas x Devoluções
 
-Dashboard web profissional para análise de vendas e devoluções do Mercado Livre (BR) com upload de arquivos Excel, processamento client-side e exportação de resultados.
+Dashboard Streamlit profissional para análise de vendas e devoluções do Mercado Livre (BR) com upload de arquivos Excel, processamento client-side e exportação de resultados.
 
 ## 🎯 Funcionalidades
 
@@ -14,11 +14,11 @@ Dashboard web profissional para análise de vendas e devoluções do Mercado Liv
 - ✅ **Resumo Executivo**: KPIs principais e qualidade do arquivo
 - ✅ **Janelas de Tempo**: Análise por períodos (30, 60, 90, 120, 150, 180 dias)
 - ✅ **Matriz vs Full**: Comparação de canais
-- ✅ **Frete**: Análise por forma de entrega
-- ✅ **Motivos**: Distribuição de motivos de devolução
-- ✅ **Ads**: Análise de vendas por publicidade
-- ✅ **SKUs**: Ranking de SKUs por risco
-- ✅ **Simulador**: Simulação de impacto com redução de taxa
+- ✅ **Frete**: Análise por forma de entrega (em desenvolvimento)
+- ✅ **Motivos**: Distribuição de motivos de devolução (em desenvolvimento)
+- ✅ **Ads**: Análise de vendas por publicidade (em desenvolvimento)
+- ✅ **SKUs**: Ranking de SKUs por risco (em desenvolvimento)
+- ✅ **Simulador**: Simulação de impacto com redução de taxa (em desenvolvimento)
 
 ### Métricas Calculadas
 - Taxa de devolução
@@ -39,76 +39,50 @@ Dashboard web profissional para análise de vendas e devoluções do Mercado Liv
 
 ```bash
 # Instalar dependências
-npm install
+pip install -r requirements.txt
 
-# Executar em desenvolvimento
-npm run dev
-
-# Build para produção
-npm run build
-
-# Preview do build
-npm run preview
+# Executar
+streamlit run app.py
 ```
 
-Acesse: `http://localhost:5173`
+Acesse: `http://localhost:8501`
 
-### Deploy no Vercel
+### Deploy no Streamlit Cloud (Recomendado)
 
-#### Opção 1: Via GitHub (Recomendado)
+#### Passo 1: Acesse Streamlit Cloud
+1. Vá para [share.streamlit.io](https://share.streamlit.io)
+2. Faça login com sua conta GitHub
 
-1. Acesse [Vercel](https://vercel.com)
-2. Clique em "New Project"
-3. Selecione o repositório `vlima-creator/Dashboard-Devolu-o`
-4. Vercel detectará automaticamente:
-   - Framework: Vite
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-5. Clique em "Deploy"
+#### Passo 2: Criar novo app
+1. Clique em "New app"
+2. Selecione:
+   - **Repository**: `vlima-creator/Dashboard-Devolu-o`
+   - **Branch**: `main`
+   - **Main file path**: `app.py`
 
-#### Opção 2: Via CLI
-
-```bash
-# Instalar Vercel CLI
-npm install -g vercel
-
-# Fazer deploy
-vercel
-
-# Deploy em produção
-vercel --prod
-```
-
-#### Opção 3: Automático
-
-Cada push para `main` fará deploy automático no Vercel.
+#### Passo 3: Deploy
+1. Clique em "Deploy"
+2. Aguarde ~2-3 minutos
+3. Seu app estará disponível em: `https://dashboard-devolu-o.streamlit.app`
 
 ## 📁 Estrutura do Projeto
 
 ```
 Dashboard-Devolu-o/
-├── src/
-│   ├── pages/
-│   │   ├── Index.tsx          # Página de upload
-│   │   └── Dashboard.tsx      # Dashboard com abas
-│   ├── components/
-│   │   ├── tabs/              # Componentes das 8 abas
-│   │   └── ui/                # Componentes shadcn/ui
-│   ├── lib/
-│   │   ├── parser.ts          # Parser de Excel
-│   │   ├── metricas.ts        # Cálculo de métricas
-│   │   └── export.ts          # Export XLSX
-│   ├── types/
-│   │   └── data.ts            # Tipos TypeScript
-│   └── App.tsx
+├── app.py                    # Aplicação Streamlit principal
+├── utils/
+│   ├── __init__.py
+│   ├── parser.py            # Parser de Excel
+│   ├── metricas.py          # Cálculo de métricas
+│   └── export.py            # Export XLSX
 ├── public/
-│   └── examples/              # Arquivos de exemplo
+│   └── examples/            # Arquivos de exemplo
 │       ├── vendas_exemplo.xlsx
 │       └── devolucoes_exemplo.xlsx
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-└── vercel.json
+├── .streamlit/
+│   └── config.toml          # Configuração Streamlit
+├── requirements.txt         # Dependências Python
+└── README.md
 ```
 
 ## 📊 Formato dos Arquivos
@@ -141,13 +115,11 @@ Colunas obrigatórias:
 
 ## 🛠️ Tecnologias
 
-- **React 19** + TypeScript
-- **Vite** - Build tool
-- **Tailwind CSS** - Styling
-- **shadcn/ui** - UI Components
-- **Recharts** - Gráficos
-- **XLSX** - Leitura/escrita de Excel
-- **Wouter** - Roteamento
+- **Python 3.11+**
+- **Streamlit** - Framework web
+- **Pandas** - Processamento de dados
+- **Plotly** - Gráficos interativos
+- **OpenPyXL** - Leitura/escrita de Excel
 
 ## 🔒 Privacidade
 
