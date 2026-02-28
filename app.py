@@ -559,9 +559,9 @@ else:
                 else:
                     cores.append('#6b7280')  # Cinza
             
-            # Calcular altura dinamica
-            altura_minima = 400
-            altura_por_item = 50
+            # Calcular altura dinamica - mais compacta
+            altura_minima = 350
+            altura_por_item = 30
             altura_total = max(altura_minima, len(df_motivos_sorted) * altura_por_item)
             
             # Criar figura com rotulos melhorados
@@ -569,7 +569,7 @@ else:
                 x=df_motivos_sorted['Quantidade'], 
                 y=df_motivos_sorted['Motivo'],
                 orientation='h', 
-                marker=dict(color=cores, line=dict(color='#ffffff', width=1)),
+                marker=dict(color=cores, line=dict(color='#ffffff', width=0.5)),
                 text=[f"{int(q)} ({p:.1f}%)" for q, p in zip(df_motivos_sorted['Quantidade'], df_motivos_sorted['Percentual (%)'])],
                 textposition='outside',
                 hovertemplate='<b>%{y}</b><br>Quantidade: %{x}<extra></extra>'
@@ -578,11 +578,24 @@ else:
             fig.update_layout(
                 title='',
                 xaxis=dict(
-                    title='Quantidade de Devolucoes',
+                    title='Quantidade',
                     showgrid=True,
                     gridcolor='#e5e7eb',
                     zeroline=False
                 ),
+                yaxis=dict(
+                    title='',
+                    tickfont=dict(size=10)
+                ),
+                height=altura_total,
+                margin=dict(l=280, r=80, t=20, b=50),
+                plot_bgcolor='#ffffff',
+                paper_bgcolor='#ffffff',
+                font=dict(family='Arial, sans-serif', size=10, color='#1a1d23'),
+                hovermode='closest',
+                showlegend=False
+            )
+,
                 yaxis=dict(
                     title='',
                     tickfont=dict(size=11)
