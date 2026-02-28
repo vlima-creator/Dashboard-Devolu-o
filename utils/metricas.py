@@ -25,23 +25,24 @@ def classificar_estado(estado):
     return 'Neutra'
 
 def calcular_metricas(vendas, matriz, full, max_date, dias_atras):
-    """Calcula métricas para um período específico com precisão corrigida"""
+    """
+    Calcula métricas para um período específico.
+    
+    IMPORTANTE: Esta função NÃO filtra por período internamente.
+    Os dados já devem chegar filtrados pela função aplicar_filtros() do app.py.
+    O parâmetro dias_atras é mantido apenas para compatibilidade, mas a filtragem
+    real é feita no cabeçalho global.
+    """
     
     if matriz is None:
         matriz = pd.DataFrame()
     if full is None:
         full = pd.DataFrame()
     
-    # Data limite
-    data_limite = max_date - timedelta(days=dias_atras)
+    # Trabalhar com os dados como recebidos (já filtrados pelo cabeçalho global)
+    vendas_periodo = vendas.copy()
     
-    # Filtrar vendas no período
-    if 'Data da venda' in vendas.columns:
-        vendas_periodo = vendas[vendas['Data da venda'] >= data_limite].copy()
-    else:
-        vendas_periodo = vendas.copy()
-    
-    # Criar mapa de devoluções (usando Cancelamentos e reembolsos (BRL) para precisão)
+    # Criar mapa de devoluções indexado por N.º de venda
     todas_dev = pd.concat([matriz, full], ignore_index=True)
     dev_map = {}
     
@@ -54,14 +55,18 @@ def calcular_metricas(vendas, matriz, full, max_date, dias_atras):
     
     # Calcular métricas
     vendas_totais = len(vendas_periodo)
-    unidades_totais = vendas_periodo['Unidades'].sum() if 'Unidades' in vendas_periodo.columns else vendas_totais
+    unidades_totais = 0
+    if 'Unidades' in vendas_periodo.columns:
+        unidades_totais = int(vendas_periodo['Unidades'].fillna(0).sum())
+    else:
+        unidades_totais = vendas_totais
     
-    faturamento_produtos = 0
-    faturamento_total = 0
-    faturamento_devolucoes = 0
-    impacto_devolucao = 0
-    perda_total = 0
-    perda_parcial = 0
+    faturamento_produtos = 0.0
+    faturamento_total = 0.0
+    faturamento_devolucoes = 0.0
+    impacto_devolucao = 0.0
+    perda_total = 0.0
+    perda_parcial = 0.0
     saudaveis = 0
     criticas = 0
     neutras = 0
@@ -69,34 +74,48 @@ def calcular_metricas(vendas, matriz, full, max_date, dias_atras):
     venda_com_devolucao = set()
     
     for _, venda in vendas_periodo.iterrows():
-        # Faturamento
-        receita_prod = venda.get('Receita por produtos (BRL)', 0) or 0
-        receita_env = venda.get('Receita por envio (BRL)', 0) or 0
-        if pd.isna(receita_prod): receita_prod = 0
-        if pd.isna(receita_env): receita_env = 0
+        # Faturamento: somar receita de produtos + receita de envio
+        receita_prod = venda.get('Receita por produtos (BRL)', 0)
+        receita_env = venda.get('Receita por envio (BRL)', 0)
+        if pd.isna(receita_prod): receita_prod = 0.0
+        if pd.isna(receita_env): receita_env = 0.0
+        receita_prod = float(receita_prod)
+        receita_env = float(receita_env)
         
         faturamento_produtos += receita_prod
         faturamento_total += receita_prod + receita_env
         
-        # Verificar devolução
+        # Verificar se esta venda tem devolução
         num_venda = str(venda.get('N.º de venda', ''))
         
         if num_venda in dev_map:
             venda_com_devolucao.add(num_venda)
-            # Faturamento de Devoluções é o valor de venda dos produtos que foram devolvidos
+            
+            # Faturamento de Devoluções = receita dos produtos que foram devolvidos
             faturamento_devolucoes += receita_prod
             
             for dev in dev_map[num_venda]:
-                # CORREÇÃO: Usar 'Cancelamentos e reembolsos (BRL)' para o impacto real
-                reembolso = dev.get('Cancelamentos e reembolsos (BRL)', 0) or 0
-                if pd.isna(reembolso):
-                    # Fallback para receita se cancelamento estiver vazio (raro)
-                    reembolso = dev.get('Receita por produtos (BRL)', 0) or 0
-                if pd.isna(reembolso):
-                    reembolso = 0
+                # Impacto real: usar 'Cancelamentos e reembolsos (BRL)'
+                reembolso = dev.get('Cancelamentos e reembolsos (BRL)', None)
+                if reembolso is None or pd.isna(reembolso):
+                    reembolso = 0.0
+                reembolso = float(reembolso)
                 
+                # Se reembolso é 0, usar receita do produto como fallback
+                if reembolso == 0:
+                    reembolso_fallback = dev.get('Receita por produtos (BRL)', 0)
+                    if pd.isna(reembolso_fallback):
+                        reembolso_fallback = 0.0
+                    reembolso = float(reembolso_fallback)
+                
+                # Custo de envio da devolução (perda parcial real)
+                custo_envio = dev.get('Custos de envio (BRL)', None)
+                if custo_envio is None or pd.isna(custo_envio):
+                    custo_envio = 0.0
+                custo_envio = float(custo_envio)
+                
+                # Classificação
                 classe = classificar_estado(dev.get('Estado'))
-                
                 if classe == 'Saudável':
                     saudaveis += 1
                 elif classe == 'Crítica':
@@ -106,9 +125,9 @@ def calcular_metricas(vendas, matriz, full, max_date, dias_atras):
                 
                 impacto_devolucao += reembolso
                 perda_total += reembolso
-                # Estimativa de perda parcial (ex: frete de retorno, embalagem, etc)
-                perda_parcial += (reembolso * 0.22) # Ajustado para aproximar do exemplo da imagem
+                perda_parcial += custo_envio
     
+    # Contagem de devoluções = número de vendas que tiveram devolução
     devolucoes_count = len(venda_com_devolucao)
     taxa_devolucao = devolucoes_count / vendas_totais if vendas_totais > 0 else 0
     
@@ -118,11 +137,11 @@ def calcular_metricas(vendas, matriz, full, max_date, dias_atras):
         'faturamento_produtos': faturamento_produtos,
         'faturamento_total': faturamento_total,
         'devolucoes_vendas': devolucoes_count,
-        'taxa_devolucao': taxa_devolucao,
+        'taxa_devolucao': taxa_devolucao,  # Valor entre 0 e 1
         'faturamento_devolucoes': faturamento_devolucoes,
-        'impacto_devolucao': -impacto_devolucao,
-        'perda_total': -perda_total,
-        'perda_parcial': -perda_parcial,
+        'impacto_devolucao': -impacto_devolucao,  # Negativo (perda)
+        'perda_total': -perda_total,               # Negativo (perda)
+        'perda_parcial': -perda_parcial,           # Negativo (perda)
         'saudaveis': saudaveis,
         'criticas': criticas,
         'neutras': neutras,
@@ -165,5 +184,5 @@ def calcular_qualidade_arquivo(data):
             'sem_estado_pct': (sem_estado_full / len(full) * 100) if len(full) > 0 else 0,
             'sem_motivo_pct': (sem_motivo_full / len(full) * 100) if len(full) > 0 else 0,
         },
-        'custo_logistico_ausente': False # Simplificação
+        'custo_logistico_ausente': False
     }

@@ -1,25 +1,30 @@
 """
-Módulo de formatação padronizada para valores monetários e percentuais.
-Padrão: BRL R$ 132.715,54 e Percentual 21.1%
+Módulo de formatação padronizada para o Dashboard.
+
+Padrões:
+- BRL: R$ 132.715,54  (ponto para milhar, vírgula para decimal)
+- BRL negativo: -R$ 132.715,54
+- Percentual: 21.1%   (ponto para decimal, 1 casa)
+- Número: 7.857       (ponto para milhar)
 """
 
 def formatar_brl(valor):
     """
-    Formata valor para padrão BRL: R$ 132.715,54
-    
-    Args:
-        valor: float ou int
-        
-    Returns:
-        str: Valor formatado no padrão brasileiro
+    Formata valor monetário no padrão BRL: R$ 132.715,54
+    Valores negativos: -R$ 132.715,54
     """
     if valor is None or (isinstance(valor, float) and valor != valor):  # NaN check
         return "R$ 0,00"
     
     try:
         valor = float(valor)
+        negativo = valor < 0
+        valor_abs = abs(valor)
         # Formatar com separador de milhares (.) e decimal (,)
-        return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        formatado = f"{valor_abs:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        if negativo:
+            return f"-R$ {formatado}"
+        return f"R$ {formatado}"
     except (ValueError, TypeError):
         return "R$ 0,00"
 
@@ -28,12 +33,8 @@ def formatar_percentual(valor, casas_decimais=1):
     """
     Formata percentual para padrão: 21.1%
     
-    Args:
-        valor: float (0-100 ou 0-1)
-        casas_decimais: int (padrão 1)
-        
-    Returns:
-        str: Percentual formatado
+    Se o valor estiver entre -1 e 1 (exclusive 0), multiplica por 100.
+    Se o valor já estiver >= 1 ou <= -1, assume que já está em percentual.
     """
     if valor is None or (isinstance(valor, float) and valor != valor):  # NaN check
         return "0.0%"
@@ -41,11 +42,27 @@ def formatar_percentual(valor, casas_decimais=1):
     try:
         valor = float(valor)
         
-        # Se valor está entre 0 e 1, converter para percentual
-        if 0 <= valor <= 1:
+        # Se valor está entre -1 e 1 (e não é 0), converter para percentual
+        if -1 < valor < 1 and valor != 0:
             valor = valor * 100
         
-        # Formatar com ponto decimal
+        formato = f"{{:.{casas_decimais}f}}"
+        return formato.format(valor) + "%"
+    except (ValueError, TypeError):
+        return "0.0%"
+
+
+def formatar_pct_direto(valor, casas_decimais=1):
+    """
+    Formata percentual SEM conversão automática.
+    Recebe valor já em percentual (ex: 21.1, não 0.211).
+    Ideal para valores que já foram calculados como percentual.
+    """
+    if valor is None or (isinstance(valor, float) and valor != valor):
+        return "0.0%"
+    
+    try:
+        valor = float(valor)
         formato = f"{{:.{casas_decimais}f}}"
         return formato.format(valor) + "%"
     except (ValueError, TypeError):
@@ -54,14 +71,7 @@ def formatar_percentual(valor, casas_decimais=1):
 
 def formatar_numero(valor, casas_decimais=0):
     """
-    Formata número inteiro com separador de milhares.
-    
-    Args:
-        valor: int ou float
-        casas_decimais: int (padrão 0)
-        
-    Returns:
-        str: Número formatado
+    Formata número com ponto como separador de milhar: 7.857
     """
     if valor is None or (isinstance(valor, float) and valor != valor):  # NaN check
         return "0"
@@ -77,38 +87,18 @@ def formatar_numero(valor, casas_decimais=0):
         return "0"
 
 
-def validar_valor_monetario(valor):
+def formatar_risco(valor):
     """
-    Valida se um valor é monetário válido.
+    Formata score de risco com ponto como separador de milhar: 185.801
+    """
+    if valor is None or (isinstance(valor, float) and valor != valor):
+        return "0"
     
-    Args:
-        valor: float ou int
-        
-    Returns:
-        bool: True se válido, False caso contrário
-    """
     try:
-        float(valor)
-        return True
+        valor = float(valor)
+        return f"{int(round(valor)):,}".replace(",", ".")
     except (ValueError, TypeError):
-        return False
-
-
-def validar_percentual(valor):
-    """
-    Valida se um valor é percentual válido (0-100 ou 0-1).
-    
-    Args:
-        valor: float
-        
-    Returns:
-        bool: True se válido, False caso contrário
-    """
-    try:
-        v = float(valor)
-        return (0 <= v <= 100) or (0 <= v <= 1)
-    except (ValueError, TypeError):
-        return False
+        return "0"
 
 
 # Testes
@@ -118,25 +108,28 @@ if __name__ == "__main__":
     
     # Testes BRL
     print("\nTestes BRL:")
-    print(f"  1234.56 -> {formatar_brl(1234.56)}")
-    print(f"  132715.54 -> {formatar_brl(132715.54)}")
-    print(f"  -238500.00 -> {formatar_brl(-238500.00)}")
-    print(f"  0 -> {formatar_brl(0)}")
+    print(f"  1234.56 -> {formatar_brl(1234.56)}")             # R$ 1.234,56
+    print(f"  132715.54 -> {formatar_brl(132715.54)}")         # R$ 132.715,54
+    print(f"  -238500.00 -> {formatar_brl(-238500.00)}")       # -R$ 238.500,00
+    print(f"  0 -> {formatar_brl(0)}")                         # R$ 0,00
+    print(f"  -52446.24 -> {formatar_brl(-52446.24)}")         # -R$ 52.446,24
     
-    # Testes Percentual
-    print("\nTestes Percentual:")
-    print(f"  0.815 -> {formatar_percentual(0.815)}")
-    print(f"  21.1 -> {formatar_percentual(21.1)}")
-    print(f"  0.0815 -> {formatar_percentual(0.0815)}")
-    print(f"  100 -> {formatar_percentual(100)}")
+    # Testes Percentual (com auto-conversão)
+    print("\nTestes Percentual (auto-conversão):")
+    print(f"  0.082 -> {formatar_percentual(0.082)}")          # 8.2%
+    print(f"  0.211 -> {formatar_percentual(0.211)}")          # 21.1%
+    
+    # Testes Percentual direto
+    print("\nTestes Percentual (direto):")
+    print(f"  8.2 -> {formatar_pct_direto(8.2)}")             # 8.2%
+    print(f"  21.1 -> {formatar_pct_direto(21.1)}")           # 21.1%
     
     # Testes Número
     print("\nTestes Número:")
-    print(f"  7861 -> {formatar_numero(7861)}")
-    print(f"  132715.54 -> {formatar_numero(132715.54, 2)}")
+    print(f"  7857 -> {formatar_numero(7857)}")                # 7.857
+    print(f"  641 -> {formatar_numero(641)}")                  # 641
     
-    # Testes Validação
-    print("\nTestes Validação:")
-    print(f"  Valor 1234.56 válido? {validar_valor_monetario(1234.56)}")
-    print(f"  Percentual 0.815 válido? {validar_percentual(0.815)}")
-    print(f"  Percentual 150 válido? {validar_percentual(150)}")
+    # Testes Risco
+    print("\nTestes Risco:")
+    print(f"  185801.5 -> {formatar_risco(185801.5)}")         # 185.802
+    print(f"  15004.3 -> {formatar_risco(15004.3)}")           # 15.004

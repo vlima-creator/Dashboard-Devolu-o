@@ -3,19 +3,17 @@ import numpy as np
 from datetime import datetime, timedelta
 
 def analisar_frete(vendas, matriz, full, max_date, dias_atras):
-    """Análise de frete e forma de entrega"""
+    """
+    Análise de frete e forma de entrega.
+    Os dados já chegam filtrados pelo cabeçalho global.
+    """
     
     if matriz is None:
         matriz = pd.DataFrame()
     if full is None:
         full = pd.DataFrame()
     
-    data_limite = max_date - timedelta(days=dias_atras)
-    
-    if 'Data da venda' in vendas.columns:
-        vendas_periodo = vendas[vendas['Data da venda'] >= data_limite].copy()
-    else:
-        vendas_periodo = vendas.copy()
+    vendas_periodo = vendas.copy()
     
     # Criar mapa de devoluções
     todas_dev = pd.concat([matriz, full], ignore_index=True)
@@ -38,18 +36,25 @@ def analisar_frete(vendas, matriz, full, max_date, dias_atras):
             vendas_forma = vendas_periodo[vendas_periodo['Forma de entrega'] == forma]
             total_vendas = len(vendas_forma)
             
-            # Contar devoluções
             dev_count = 0
-            dev_valor = 0
+            dev_valor = 0.0
             
+            vendas_devolvidas = set()
             for _, venda in vendas_forma.iterrows():
                 num_venda = str(venda.get('N.º de venda', ''))
-                if num_venda in dev_map:
-                    dev_count += len(dev_map[num_venda])
+                if num_venda in dev_map and num_venda not in vendas_devolvidas:
+                    vendas_devolvidas.add(num_venda)
+                    dev_count += 1
                     for dev in dev_map[num_venda]:
-                        reembolso = dev.get('Receita por produtos (BRL)', 0) or 0
-                        if pd.isna(reembolso):
-                            reembolso = 0
+                        # Usar Cancelamentos e reembolsos para impacto real
+                        reembolso = dev.get('Cancelamentos e reembolsos (BRL)', None)
+                        if reembolso is None or pd.isna(reembolso):
+                            reembolso = 0.0
+                        reembolso = float(reembolso)
+                        if reembolso == 0:
+                            fallback = dev.get('Receita por produtos (BRL)', 0)
+                            if pd.isna(fallback): fallback = 0.0
+                            reembolso = float(fallback)
                         dev_valor += reembolso
             
             taxa = (dev_count / total_vendas * 100) if total_vendas > 0 else 0
@@ -58,55 +63,52 @@ def analisar_frete(vendas, matriz, full, max_date, dias_atras):
                 'Forma de Entrega': forma,
                 'Vendas': total_vendas,
                 'Devoluções': dev_count,
-                'Taxa (%)': taxa,
-                'Impacto (R$)': -dev_valor,
+                'Taxa (%)': round(taxa, 1),
+                'Impacto (R$)': round(-dev_valor, 2),
             })
     
     return pd.DataFrame(frete_data) if frete_data else pd.DataFrame()
 
 def analisar_motivos(matriz, full, max_date, dias_atras):
-    """Análise de motivos de devolução"""
+    """
+    Análise de motivos de devolução.
+    Os dados já chegam filtrados pelo cabeçalho global.
+    """
     
     if matriz is None:
         matriz = pd.DataFrame()
     if full is None:
         full = pd.DataFrame()
     
-    data_limite = max_date - timedelta(days=dias_atras)
-    
     todas_dev = pd.concat([matriz, full], ignore_index=True)
-    
-    if 'Data da venda' in todas_dev.columns:
-        todas_dev = todas_dev[todas_dev['Data da venda'] >= data_limite].copy()
     
     motivos_data = []
     
-    if 'Motivo do resultado' in todas_dev.columns:
+    if len(todas_dev) > 0 and 'Motivo do resultado' in todas_dev.columns:
         motivos = todas_dev['Motivo do resultado'].dropna().value_counts()
+        total_com_motivo = motivos.sum()
         
         for motivo, count in motivos.items():
             motivos_data.append({
-                'Motivo': str(motivo)[:50],  # Limitar tamanho
-                'Quantidade': count,
-                'Percentual (%)': (count / len(todas_dev) * 100) if len(todas_dev) > 0 else 0,
+                'Motivo': str(motivo)[:50],
+                'Quantidade': int(count),
+                'Percentual (%)': round((count / total_com_motivo * 100), 1) if total_com_motivo > 0 else 0,
             })
     
     return pd.DataFrame(motivos_data) if motivos_data else pd.DataFrame()
 
 def analisar_ads(vendas, matriz, full, max_date, dias_atras):
-    """Análise de vendas por publicidade (Ads)"""
+    """
+    Análise de vendas por publicidade (Ads).
+    Os dados já chegam filtrados pelo cabeçalho global.
+    """
     
     if matriz is None:
         matriz = pd.DataFrame()
     if full is None:
         full = pd.DataFrame()
     
-    data_limite = max_date - timedelta(days=dias_atras)
-    
-    if 'Data da venda' in vendas.columns:
-        vendas_periodo = vendas[vendas['Data da venda'] >= data_limite].copy()
-    else:
-        vendas_periodo = vendas.copy()
+    vendas_periodo = vendas.copy()
     
     # Criar mapa de devoluções
     todas_dev = pd.concat([matriz, full], ignore_index=True)
@@ -123,7 +125,6 @@ def analisar_ads(vendas, matriz, full, max_date, dias_atras):
     ads_data = []
     
     if 'Venda por publicidade' in vendas_periodo.columns:
-        # Agrupar por sim/não
         for pub_type in ['Sim', 'Não']:
             vendas_pub = vendas_periodo[vendas_periodo['Venda por publicidade'] == pub_type]
             total_vendas = len(vendas_pub)
@@ -131,59 +132,62 @@ def analisar_ads(vendas, matriz, full, max_date, dias_atras):
             if total_vendas == 0:
                 continue
             
-            # Contar devoluções
             dev_count = 0
-            receita_total = 0
-            receita_dev = 0
+            receita_total = 0.0
+            impacto_total = 0.0
             
+            vendas_devolvidas = set()
             for _, venda in vendas_pub.iterrows():
-                receita = venda.get('Receita por produtos (BRL)', 0) or 0
-                if pd.isna(receita):
-                    receita = 0
-                receita_total += receita
+                receita = venda.get('Receita por produtos (BRL)', 0)
+                if pd.isna(receita): receita = 0.0
+                receita_total += float(receita)
                 
                 num_venda = str(venda.get('N.º de venda', ''))
-                if num_venda in dev_map:
-                    dev_count += len(dev_map[num_venda])
+                if num_venda in dev_map and num_venda not in vendas_devolvidas:
+                    vendas_devolvidas.add(num_venda)
+                    dev_count += 1
                     for dev in dev_map[num_venda]:
-                        reembolso = dev.get('Receita por produtos (BRL)', 0) or 0
-                        if pd.isna(reembolso):
-                            reembolso = 0
-                        receita_dev += reembolso
+                        # Usar Cancelamentos e reembolsos para impacto real
+                        reembolso = dev.get('Cancelamentos e reembolsos (BRL)', None)
+                        if reembolso is None or pd.isna(reembolso):
+                            reembolso = 0.0
+                        reembolso = float(reembolso)
+                        if reembolso == 0:
+                            fallback = dev.get('Receita por produtos (BRL)', 0)
+                            if pd.isna(fallback): fallback = 0.0
+                            reembolso = float(fallback)
+                        impacto_total += reembolso
             
             taxa = (dev_count / total_vendas * 100) if total_vendas > 0 else 0
             
             ads_data.append({
-                'Tipo': f'Com Publicidade' if pub_type == 'Sim' else 'Sem Publicidade',
+                'Tipo': 'Com Publicidade' if pub_type == 'Sim' else 'Sem Publicidade',
                 'Vendas': total_vendas,
                 'Devoluções': dev_count,
-                'Taxa (%)': taxa,
-                'Receita (R$)': receita_total,
-                'Impacto (R$)': -receita_dev,
+                'Taxa (%)': round(taxa, 1),
+                'Receita (R$)': round(receita_total, 2),
+                'Impacto (R$)': round(-impacto_total, 2),
             })
     
     return pd.DataFrame(ads_data) if ads_data else pd.DataFrame()
 
 def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=None):
-    """Análise de SKUs com maior risco"""
+    """
+    Análise de SKUs com maior risco.
+    Os dados já chegam filtrados pelo cabeçalho global.
+    """
     
     if matriz is None:
         matriz = pd.DataFrame()
     if full is None:
         full = pd.DataFrame()
     
-    data_limite = max_date - timedelta(days=dias_atras)
-    
-    if 'Data da venda' in vendas.columns:
-        vendas_periodo = vendas[vendas['Data da venda'] >= data_limite].copy()
-    else:
-        vendas_periodo = vendas.copy()
+    vendas_periodo = vendas.copy()
     
     # Criar mapa de devoluções
     todas_dev = pd.concat([matriz, full], ignore_index=True)
     dev_map = {}
     
-    # Criar mapa de reembolsos (coluna de cancelamentos/reembolsos)
     if len(todas_dev) > 0 and 'N.º de venda' in todas_dev.columns:
         for _, row in todas_dev.iterrows():
             num_venda = str(row['N.º de venda'])
@@ -197,54 +201,58 @@ def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=None):
     if 'SKU' in vendas_periodo.columns:
         for _, venda in vendas_periodo.iterrows():
             sku = str(venda.get('SKU', 'N/A'))
+            if pd.isna(venda.get('SKU')):
+                sku = 'N/A'
             
             if sku not in skus_data:
                 skus_data[sku] = {
                     'vendas': 0,
                     'devolucoes': 0,
-                    'receita': 0,
-                    'impacto': 0,
-                    'reembolso': 0,
-                    'custo_dev': 0,
+                    'receita': 0.0,
+                    'impacto': 0.0,
+                    'reembolso': 0.0,
+                    'custo_dev': 0.0,
+                    'vendas_devolvidas': set(),
                 }
             
             skus_data[sku]['vendas'] += 1
             
-            receita = venda.get('Receita por produtos (BRL)', 0) or 0
-            if pd.isna(receita):
-                receita = 0
-            skus_data[sku]['receita'] += receita
+            receita = venda.get('Receita por produtos (BRL)', 0)
+            if pd.isna(receita): receita = 0.0
+            skus_data[sku]['receita'] += float(receita)
             
             num_venda = str(venda.get('N.º de venda', ''))
-            if num_venda in dev_map:
-                skus_data[sku]['devolucoes'] += len(dev_map[num_venda])
+            if num_venda in dev_map and num_venda not in skus_data[sku]['vendas_devolvidas']:
+                skus_data[sku]['vendas_devolvidas'].add(num_venda)
+                skus_data[sku]['devolucoes'] += 1
+                
                 for dev in dev_map[num_venda]:
-                    # Impacto (receita do produto devolvido)
-                    imp = dev.get('Receita por produtos (BRL)', 0) or 0
-                    if pd.isna(imp):
-                        imp = 0
-                    skus_data[sku]['impacto'] += imp
-                    
-                    # Reembolso (cancelamentos e reembolsos)
-                    reemb = dev.get('Cancelamentos e reembolsos (BRL)', 0) or 0
-                    if pd.isna(reemb):
-                        reemb = 0
+                    # Impacto: Cancelamentos e reembolsos
+                    reemb = dev.get('Cancelamentos e reembolsos (BRL)', None)
+                    if reemb is None or pd.isna(reemb):
+                        reemb = 0.0
+                    reemb = float(reemb)
+                    if reemb == 0:
+                        fallback = dev.get('Receita por produtos (BRL)', 0)
+                        if pd.isna(fallback): fallback = 0.0
+                        reemb = float(fallback)
+                    skus_data[sku]['impacto'] += reemb
                     skus_data[sku]['reembolso'] += reemb
                     
                     # Custo de devolução (custos de envio)
-                    custo = dev.get('Custos de envio (BRL)', 0) or 0
-                    if pd.isna(custo):
-                        custo = 0
-                    skus_data[sku]['custo_dev'] += custo
+                    custo = dev.get('Custos de envio (BRL)', None)
+                    if custo is None or pd.isna(custo):
+                        custo = 0.0
+                    skus_data[sku]['custo_dev'] += float(custo)
     
     # Calcular total de devoluções para concentração
     total_devolucoes = sum(d['devolucoes'] for d in skus_data.values())
     
-    # Converter para DataFrame e calcular taxa
+    # Converter para DataFrame
     skus_list = []
     for sku, d in skus_data.items():
         if d['devolucoes'] == 0:
-            continue  # Só incluir SKUs com devolução
+            continue
         
         taxa = (d['devolucoes'] / d['vendas'] * 100) if d['vendas'] > 0 else 0
         score_risco = taxa * d['impacto'] / 100 if d['impacto'] > 0 else 0
@@ -261,10 +269,10 @@ def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=None):
             'SKU': sku,
             'Vendas': d['vendas'],
             'Dev.': d['devolucoes'],
-            'Taxa': taxa,
-            'Impacto': -d['impacto'],
-            'Reemb.': -abs(d['reembolso']),
-            'Custo Dev.': -abs(d['custo_dev']),
+            'Taxa': round(taxa, 1),
+            'Impacto': round(-d['impacto'], 2),
+            'Reemb.': round(-abs(d['reembolso']), 2),
+            'Custo Dev.': round(-abs(d['custo_dev']), 2),
             'Risco': round(score_risco, 3),
             'Classe': classe,
         })
@@ -286,12 +294,7 @@ def simular_reducao(vendas, matriz, full, max_date, dias_atras, reducao_percentu
     if full is None:
         full = pd.DataFrame()
     
-    data_limite = max_date - timedelta(days=dias_atras)
-    
-    if 'Data da venda' in vendas.columns:
-        vendas_periodo = vendas[vendas['Data da venda'] >= data_limite].copy()
-    else:
-        vendas_periodo = vendas.copy()
+    vendas_periodo = vendas.copy()
     
     # Criar mapa de devoluções
     todas_dev = pd.concat([matriz, full], ignore_index=True)
@@ -304,22 +307,30 @@ def simular_reducao(vendas, matriz, full, max_date, dias_atras, reducao_percentu
                 dev_map[num_venda] = []
             dev_map[num_venda].append(row)
     
-    # Calcular cenários
     vendas_totais = len(vendas_periodo)
-    faturamento_total = vendas_periodo['Receita por produtos (BRL)'].sum() if 'Receita por produtos (BRL)' in vendas_periodo.columns else 0
+    faturamento_total = 0.0
+    if 'Receita por produtos (BRL)' in vendas_periodo.columns:
+        faturamento_total = float(vendas_periodo['Receita por produtos (BRL)'].fillna(0).sum())
     
     # Cenário atual
     devolucoes_atuais = 0
-    impacto_atual = 0
+    impacto_atual = 0.0
     
+    vendas_devolvidas = set()
     for _, venda in vendas_periodo.iterrows():
         num_venda = str(venda.get('N.º de venda', ''))
-        if num_venda in dev_map:
-            devolucoes_atuais += len(dev_map[num_venda])
+        if num_venda in dev_map and num_venda not in vendas_devolvidas:
+            vendas_devolvidas.add(num_venda)
+            devolucoes_atuais += 1
             for dev in dev_map[num_venda]:
-                reembolso = dev.get('Receita por produtos (BRL)', 0) or 0
-                if pd.isna(reembolso):
-                    reembolso = 0
+                reembolso = dev.get('Cancelamentos e reembolsos (BRL)', None)
+                if reembolso is None or pd.isna(reembolso):
+                    reembolso = 0.0
+                reembolso = float(reembolso)
+                if reembolso == 0:
+                    fallback = dev.get('Receita por produtos (BRL)', 0)
+                    if pd.isna(fallback): fallback = 0.0
+                    reembolso = float(fallback)
                 impacto_atual += reembolso
     
     taxa_atual = (devolucoes_atuais / vendas_totais * 100) if vendas_totais > 0 else 0
@@ -337,13 +348,13 @@ def simular_reducao(vendas, matriz, full, max_date, dias_atras, reducao_percentu
         'cenario_atual': {
             'devolucoes': devolucoes_atuais,
             'taxa': taxa_atual,
-            'impacto': -impacto_atual,
+            'impacto': round(-impacto_atual, 2),
         },
         'cenario_simulado': {
             'devolucoes': devolucoes_simuladas,
-            'taxa': taxa_simulada,
-            'impacto': -impacto_simulado,
+            'taxa': round(taxa_simulada, 1),
+            'impacto': round(-impacto_simulado, 2),
         },
-        'economia': economia,
+        'economia': round(economia, 2),
         'reducao_percentual': reducao_percentual,
     }

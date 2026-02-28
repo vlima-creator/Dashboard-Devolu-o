@@ -1,9 +1,10 @@
 import pandas as pd
 from io import BytesIO
 from utils.metricas import calcular_metricas, calcular_qualidade_arquivo
+from utils.formatacao import formatar_brl, formatar_pct_direto
 
 def exportar_xlsx(data):
-    """Exporta os resultados para um arquivo XLSX corrigido"""
+    """Exporta os resultados para um arquivo XLSX com formatação BRL padronizada"""
     
     vendas = data['vendas']
     matriz = data['matriz']
@@ -23,24 +24,26 @@ def exportar_xlsx(data):
     resumo_data = {
         'Métrica': [
             'Total de Vendas',
-            'Faturamento Total (R$)',
-            'Taxa de Devolução (%)',
+            'Faturamento Produtos',
+            'Faturamento Total',
+            'Taxa de Devolução',
             'Devoluções',
-            'Impacto Financeiro (R$)',
-            'Perda Total (R$)',
-            'Perda Parcial (R$)',
+            'Faturamento Devoluções',
+            'Perda Total',
+            'Perda Parcial',
             'Devoluções Saudáveis',
             'Devoluções Críticas',
             'Devoluções Neutras',
         ],
         'Valor': [
             metricas_180['vendas'],
-            f"{metricas_180['faturamento_total']:.2f}",
-            f"{metricas_180['taxa_devolucao'] * 100:.2f}",
+            formatar_brl(metricas_180['faturamento_produtos']),
+            formatar_brl(metricas_180['faturamento_total']),
+            formatar_pct_direto(metricas_180['taxa_devolucao'] * 100),
             metricas_180['devolucoes_vendas'],
-            f"{metricas_180['impacto_devolucao']:.2f}",
-            f"{metricas_180['perda_total']:.2f}",
-            f"{metricas_180['perda_parcial']:.2f}",
+            formatar_brl(metricas_180['faturamento_devolucoes']),
+            formatar_brl(metricas_180['perda_total']),
+            formatar_brl(metricas_180['perda_parcial']),
             metricas_180['saudaveis'],
             metricas_180['criticas'],
             metricas_180['neutras'],
@@ -49,26 +52,26 @@ def exportar_xlsx(data):
     
     pd.DataFrame(resumo_data).to_excel(writer, sheet_name='Resumo', index=False)
     
-    # Aba 2: Qualidade (Corrigida para evitar KeyError)
+    # Aba 2: Qualidade
     qualidade = calcular_qualidade_arquivo(data)
     qualidade_data = {
         'Métrica': [
-            'SKU sem informação (%)',
-            'Data sem informação (%)',
-            'N.º de venda sem informação (%)',
-            'Devoluções Matriz - Sem motivo (%)',
-            'Devoluções Matriz - Sem estado (%)',
-            'Devoluções Full - Sem motivo (%)',
-            'Devoluções Full - Sem estado (%)',
+            'SKU sem informação',
+            'Data sem informação',
+            'N.º de venda sem informação',
+            'Devoluções Matriz - Sem motivo',
+            'Devoluções Matriz - Sem estado',
+            'Devoluções Full - Sem motivo',
+            'Devoluções Full - Sem estado',
         ],
         'Valor': [
-            f"{qualidade['vendas']['sem_sku_pct']:.2f}",
-            f"{qualidade['vendas']['sem_data_pct']:.2f}",
-            f"{qualidade['vendas']['sem_numero_venda_pct']:.2f}",
-            f"{qualidade['matriz']['sem_motivo_pct']:.2f}",
-            f"{qualidade['matriz']['sem_estado_pct']:.2f}",
-            f"{qualidade['full']['sem_motivo_pct']:.2f}",
-            f"{qualidade['full']['sem_estado_pct']:.2f}",
+            formatar_pct_direto(qualidade['vendas']['sem_sku_pct']),
+            formatar_pct_direto(qualidade['vendas']['sem_data_pct']),
+            formatar_pct_direto(qualidade['vendas']['sem_numero_venda_pct']),
+            formatar_pct_direto(qualidade['matriz']['sem_motivo_pct']),
+            formatar_pct_direto(qualidade['matriz']['sem_estado_pct']),
+            formatar_pct_direto(qualidade['full']['sem_motivo_pct']),
+            formatar_pct_direto(qualidade['full']['sem_estado_pct']),
         ]
     }
     
@@ -81,10 +84,13 @@ def exportar_xlsx(data):
         janelas_data.append({
             'Período (dias)': janela,
             'Vendas': m['vendas'],
-            'Faturamento (R$)': f"{m['faturamento_total']:.2f}",
+            'Faturamento Prod.': formatar_brl(m['faturamento_produtos']),
+            'Faturamento Total': formatar_brl(m['faturamento_total']),
             'Devoluções': m['devolucoes_vendas'],
-            'Taxa (%)': f"{m['taxa_devolucao'] * 100:.2f}",
-            'Perda Total (R$)': f"{m['perda_total']:.2f}",
+            'Taxa': formatar_pct_direto(m['taxa_devolucao'] * 100),
+            'Fat. Devoluções': formatar_brl(m['faturamento_devolucoes']),
+            'Perda Total': formatar_brl(m['perda_total']),
+            'Perda Parcial': formatar_brl(m['perda_parcial']),
         })
     
     pd.DataFrame(janelas_data).to_excel(writer, sheet_name='Janelas', index=False)

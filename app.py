@@ -7,7 +7,7 @@ from utils.parser import processar_arquivos
 from utils.metricas import calcular_metricas, calcular_qualidade_arquivo
 from utils.export import exportar_xlsx
 from utils.analises import analisar_frete, analisar_motivos, analisar_ads, analisar_skus, simular_reducao
-from utils.formatacao import formatar_brl, formatar_percentual, formatar_numero
+from utils.formatacao import formatar_brl, formatar_percentual, formatar_pct_direto, formatar_numero, formatar_risco
 
 # Configuração da página
 st.set_page_config(
@@ -279,7 +279,7 @@ else:
         with c1:
             render_metric_card("VENDAS", formatar_numero(metricas['vendas']), f"{formatar_numero(metricas['unidades'])} un.", "🛒")
         with c2:
-            render_metric_card("FATURAMENTO", formatar_brl(metricas['faturamento_total']), f"Total: {formatar_brl(metricas['faturamento_total'])}", "💲")
+            render_metric_card("FATURAMENTO", formatar_brl(metricas['faturamento_produtos']), f"Total: {formatar_brl(metricas['faturamento_total'])}", "💲")
         with c3:
             render_metric_card("DEVOLUÇÕES", formatar_numero(metricas['devolucoes_vendas']), f"Taxa: {formatar_percentual(metricas['taxa_devolucao'])}", "🔄")
         with c4:
@@ -354,8 +354,8 @@ else:
                 'Taxa': m['taxa_devolucao'] * 100,
                 'Faturamento': m['faturamento_total'],
                 'Faturamento_Dev': m['faturamento_devolucoes'],
-                'Perda_Total': -m['perda_total'],
-                'Perda_Parcial': -m['perda_parcial'],
+                'Perda_Total': m['perda_total'],
+                'Perda_Parcial': m['perda_parcial'],
                 'Saudaveis': m['saudaveis'],
                 'Criticas': m['criticas'],
             })
@@ -400,7 +400,7 @@ else:
                 'Vendas': formatar_numero(row['Vendas']),
                 'Fat. Prod.': formatar_brl(row['Faturamento']),
                 'Dev.': row['Devoluções'],
-                'Taxa': f"{row['Taxa']:.1f}%",
+                'Taxa': formatar_pct_direto(row['Taxa']),
                 'Fat. Dev.': formatar_brl(row['Faturamento_Dev']),
                 'Perda Total': formatar_brl(row['Perda_Total']),
                 'Perda Parcial': formatar_brl(row['Perda_Parcial']),
@@ -454,7 +454,7 @@ else:
                 st.markdown(f"""
                     <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
                         <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Top 10 Conc.</div>
-                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{top10_m:.1f}%</div>
+                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_pct_direto(top10_m)}</div>
                     </div>
                 """, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -491,7 +491,7 @@ else:
                 st.markdown(f"""
                     <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
                         <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Top 10 Conc.</div>
-                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{top10_f:.1f}%</div>
+                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_pct_direto(top10_f)}</div>
                     </div>
                 """, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -525,7 +525,11 @@ else:
         st.subheader("🚚 Análise de Frete e Forma de Entrega")
         df_frete = analisar_frete(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_global)
         if len(df_frete) > 0:
-            st.dataframe(df_frete, use_container_width=True, hide_index=True)
+            df_frete_display = df_frete.copy()
+            df_frete_display['Vendas'] = df_frete_display['Vendas'].apply(lambda x: formatar_numero(x))
+            df_frete_display['Taxa (%)'] = df_frete_display['Taxa (%)'].apply(lambda x: formatar_pct_direto(x))
+            df_frete_display['Impacto (R$)'] = df_frete_display['Impacto (R$)'].apply(lambda x: formatar_brl(x))
+            st.dataframe(df_frete_display, use_container_width=True, hide_index=True)
         else:
             st.info("Sem dados disponíveis")
 
@@ -565,7 +569,7 @@ else:
                 df_motivos_filtered = df_motivos
             
             df_motivos_display = df_motivos_filtered.copy()
-            df_motivos_display['%'] = df_motivos_display['Percentual (%)'].apply(lambda x: f"{x:.1f}%")
+            df_motivos_display['%'] = df_motivos_display['Percentual (%)'].apply(lambda x: formatar_pct_direto(x))
             df_motivos_display = df_motivos_display[['Motivo', 'Quantidade', '%']]
             st.dataframe(df_motivos_display, use_container_width=True, hide_index=True)
         st.markdown('</div>', unsafe_allow_html=True)
@@ -598,7 +602,7 @@ else:
         with c2:
             render_metric_card("DEV. ADS", formatar_numero(ads_dev), "", "📉")
         with c3:
-            render_metric_card("TAXA ADS", f"{ads_taxa:.1f}%", "", "🎯")
+            render_metric_card("TAXA ADS", formatar_pct_direto(ads_taxa), "", "🎯")
         with c4:
             render_metric_card("IMPACTO ADS", formatar_brl(ads_impacto), "", "📉")
         with c5:
@@ -624,7 +628,7 @@ else:
                     </div>
                     <div style="display: flex; justify-content: space-between; padding: 8px 0;">
                         <span style="color: #1a1d23; font-weight: 500;">Taxa</span>
-                        <span style="color: #1a1d23; font-weight: 600;">{ads_taxa:.1f}%</span>
+                        <span style="color: #1a1d23; font-weight: 600;">{formatar_pct_direto(ads_taxa)}</span>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
@@ -642,7 +646,7 @@ else:
                     </div>
                     <div style="display: flex; justify-content: space-between; padding: 8px 0;">
                         <span style="color: #1a1d23; font-weight: 500;">Taxa</span>
-                        <span style="color: #1a1d23; font-weight: 600;">{org_taxa:.1f}%</span>
+                        <span style="color: #1a1d23; font-weight: 600;">{formatar_pct_direto(org_taxa)}</span>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
@@ -665,14 +669,14 @@ else:
             st.markdown(f"""
                 <div class="metric-card" style="text-align: center;">
                     <div class="metric-label">Top 10 concentração</div>
-                    <div class="metric-value" style="font-size: 2rem;">{top10_conc:.1f}%</div>
+                    <div class="metric-value" style="font-size: 2rem;">{formatar_pct_direto(top10_conc)}</div>
                 </div>
             """, unsafe_allow_html=True)
         with c2:
             st.markdown(f"""
                 <div class="metric-card" style="text-align: center;">
                     <div class="metric-label">Top 20 concentração</div>
-                    <div class="metric-value" style="font-size: 2rem;">{top20_conc:.1f}%</div>
+                    <div class="metric-value" style="font-size: 2rem;">{formatar_pct_direto(top20_conc)}</div>
                 </div>
             """, unsafe_allow_html=True)
         with c3:
@@ -692,11 +696,11 @@ else:
             
             def formatar_df_skus(df):
                 df_display = df.copy()
-                df_display['Taxa'] = df_display['Taxa'].apply(lambda x: f"{x:.1f}%")
+                df_display['Taxa'] = df_display['Taxa'].apply(lambda x: formatar_pct_direto(x))
                 df_display['Impacto'] = df_display['Impacto'].apply(lambda x: formatar_brl(x))
                 df_display['Reemb.'] = df_display['Reemb.'].apply(lambda x: formatar_brl(x))
                 df_display['Custo Dev.'] = df_display['Custo Dev.'].apply(lambda x: formatar_brl(x))
-                df_display['Risco'] = df_display['Risco'].apply(lambda x: f"{x:,.3f}")
+                df_display['Risco'] = df_display['Risco'].apply(lambda x: formatar_risco(x))
                 return df_display[['SKU', 'Vendas', 'Dev.', 'Taxa', 'Impacto', 'Reemb.', 'Custo Dev.', 'Risco', 'Classe']]
             
             with sub_tab1:
@@ -753,11 +757,11 @@ else:
         
         c1, c2, c3 = st.columns(3)
         with c1:
-            render_metric_card("TAXA ATUAL", f"{taxa_atual:.1f}%", "", "🎯")
+            render_metric_card("TAXA ATUAL", formatar_pct_direto(taxa_atual), "", "🎯")
         with c2:
-            render_metric_card("NOVA TAXA", f"{nova_taxa:.1f}%", f"-{reducao_pp}pp", "📈")
+            render_metric_card("NOVA TAXA", formatar_pct_direto(nova_taxa), f"-{reducao_pp}pp", "📈")
         with c3:
-            render_metric_card("DINHEIRO RECUPERADO", formatar_brl(dinheiro_recuperado), f"{dev_evitadas} devoluções evitadas", "📋")
+            render_metric_card("DINHEIRO RECUPERADO", formatar_brl(dinheiro_recuperado), f"{formatar_numero(dev_evitadas)} devoluções evitadas", "📋")
     
     # ─── EXPORT ───
     st.markdown("---")
