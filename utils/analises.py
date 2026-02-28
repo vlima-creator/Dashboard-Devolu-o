@@ -87,8 +87,33 @@ def analisar_motivos(matriz, full, max_date, dias_atras):
     motivos_data = []
     
     if len(todas_dev) > 0 and 'Motivo do resultado' in todas_dev.columns:
-        # Preencher nulos e vazios com 'Motivo não especificado'
-        todas_dev['Motivo do resultado'] = todas_dev['Motivo do resultado'].fillna('Motivo não especificado').replace(['', ' '], 'Motivo não especificado')
+        def categorizar_vazio(row):
+            motivo = str(row['Motivo do resultado']).strip()
+            if motivo != '' and motivo != 'nan':
+                return motivo
+            
+            estado = str(row.get('Estado', '')).lower()
+            status = str(row.get('Descrição do status', '')).lower()
+            
+            if 'te demos o dinheiro' in estado or 'te demos o dinheiro' in status:
+                return 'Reembolso ao Vendedor'
+            if 'reembolso' in estado or 'reembolsamos' in status:
+                return 'Reembolso ao Comprador'
+            if 'mediação' in estado or 'mediação' in status:
+                return 'Finalizado via Mediação'
+            if 'cancelada' in estado or 'cancelada' in status:
+                return 'Venda Cancelada'
+            if 'não entregue' in estado or 'não foi feita' in estado:
+                return 'Devolução não realizada'
+            if 'enviamos de volta' in estado or 'devolvemos o produto ao comprador' in estado:
+                return 'Produto devolvido ao comprador'
+            if 'devolvido' in estado or 'devolução finalizada' in estado:
+                return 'Devolução Concluída'
+            
+            return 'Outros Motivos de Devolução'
+
+        # Aplicar categorização inteligente para motivos vazios
+        todas_dev['Motivo do resultado'] = todas_dev.apply(categorizar_vazio, axis=1)
         
         motivos = todas_dev['Motivo do resultado'].value_counts()
         total_com_motivo = motivos.sum()
