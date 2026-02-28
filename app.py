@@ -117,9 +117,34 @@ st.markdown("""
         border-radius: 0 4px 4px 0;
     }
     
-    /* Esconder slider padrao */
-    [data-testid="stSlider"] {
-        display: none !important;
+    /* Sobrepor slider transparente na barra visual */
+    .simulator-container [data-testid="stSlider"] {
+        position: absolute !important;
+        top: 30px !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 24px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        z-index: 100 !important;
+        opacity: 0 !important;
+        pointer-events: auto !important;
+        background: transparent !important;
+    }
+    
+    .simulator-container [data-testid="stSlider"] > div {
+        height: 24px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .simulator-container [data-testid="stSlider"] input[type="range"] {
+        width: 100% !important;
+        height: 24px !important;
+        cursor: pointer !important;
+        opacity: 0 !important;
+        z-index: 100 !important;
+        pointer-events: auto !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -772,15 +797,18 @@ else:
         
         st.markdown("<h3 style='margin-bottom: 20px;'>Simulador de Redução de Devoluções</h3>", unsafe_allow_html=True)
         
-        # Slider com porcentagem (será escondido visualmente)
+        # Container do simulador
+        st.markdown('<div class="simulator-container" style="position: relative;">', unsafe_allow_html=True)
+        
         max_slider = int(taxa_atual) if taxa_atual > 0 else 10
-        reducao_pct = st.slider("Redução desejada (%)", 0, max_slider, min(1, max_slider), key="sim_reducao_pct")
+        
+        # Slider com porcentagem (será sobreposto na barra)
+        reducao_pct = st.slider("Redução desejada (%)", 0, max_slider, min(1, max_slider), key="sim_reducao_pct", label_visibility="collapsed")
         
         # Barra visual que reflete o valor do slider
         progress_width = min(reducao_pct, 100)
         st.markdown(f"""
-            <div class="simulator-container">
-                <p style='color: #6e7787; font-size: 0.9rem; margin-bottom: 10px;'>Redução simulada: <strong style='color: #1a1d23; font-size: 1.1rem;'>{reducao_pct}%</strong></p>
+                <p style='color: #6e7787; font-size: 0.9rem; margin-bottom: 10px; margin-top: -50px;'>Redução simulada: <strong style='color: #1a1d23; font-size: 1.1rem;'>{reducao_pct}%</strong></p>
                 <div class="simulator-bar">
                     <div class="simulator-bar-yellow" style="width: {progress_width}%;"></div>
                     <div class="simulator-bar-dark"></div>
