@@ -542,60 +542,16 @@ else:
         
         if len(df_motivos) > 0:
             df_motivos_sorted = df_motivos.sort_values('Quantidade', ascending=True)
-            # Definir cores estratégicas por tipo de motivo
-            cores = []
-            for motivo in df_motivos_sorted['Motivo']:
-                motivo_lower = motivo.lower()
-                if 'defeito' in motivo_lower or 'nao funciona' in motivo_lower or 'incompleto' in motivo_lower:
-                    cores.append('#ef4444')  # Vermelho
-                elif 'fisica' in motivo_lower or 'devolvi' in motivo_lower:
-                    cores.append('#f97316')  # Laranja
-                elif 'cancelado' in motivo_lower:
-                    cores.append('#eab308')  # Amarelo
-                elif 'reembolso' in motivo_lower:
-                    cores.append('#3b82f6')  # Azul
-                elif 'mediacao' in motivo_lower:
-                    cores.append('#8b5cf6')  # Purpura
-                else:
-                    cores.append('#6b7280')  # Cinza
-            
-            # Calcular altura dinamica
-            altura_minima = 400
-            altura_por_item = 50
-            altura_total = max(altura_minima, len(df_motivos_sorted) * altura_por_item)
-            
-            # Criar figura com rotulos melhorados
             fig = go.Figure(go.Bar(
-                x=df_motivos_sorted['Quantidade'], 
-                y=df_motivos_sorted['Motivo'],
-                orientation='h', 
-                marker=dict(color=cores, line=dict(color='#ffffff', width=1)),
-                text=[f"{int(q)} ({p:.1f}%)" for q, p in zip(df_motivos_sorted['Quantidade'], df_motivos_sorted['Percentual (%)'])],
-                textposition='outside',
-                hovertemplate='<b>%{y}</b><br>Quantidade: %{x}<extra></extra>'
+                x=df_motivos_sorted['Quantidade'], y=df_motivos_sorted['Motivo'],
+                orientation='h', marker_color='#f59e0b',
+                text=df_motivos_sorted['Quantidade'], textposition='outside'
             ))
-            
             fig.update_layout(
                 title='',
-                xaxis=dict(
-                    title='Quantidade de Devolucoes',
-                    showgrid=True,
-                    gridcolor='#e5e7eb',
-                    zeroline=False
-                ),
-                yaxis=dict(
-                    title='',
-                    tickfont=dict(size=11)
-                ),
-                height=altura_total,
-                margin=dict(l=300, r=100, t=20, b=60),
-                plot_bgcolor='#ffffff',
-                paper_bgcolor='#ffffff',
-                font=dict(family='Arial, sans-serif', size=11, color='#1a1d23'),
-                hovermode='closest',
-                showlegend=False
+                xaxis=dict(title='Quantidade', showgrid=True, gridcolor='#e5e7eb'),
+                yaxis=dict(title=''), height=400, margin=dict(l=250, r=50)
             )
-
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Sem dados disponíveis")
