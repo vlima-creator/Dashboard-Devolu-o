@@ -30,8 +30,8 @@ def analisar_frete(vendas, matriz, full, max_date, dias_atras):
     frete_data = []
     
     if 'Forma de entrega' in vendas_periodo.columns:
-        # Preencher valores vazios com 'Não especificado' para garantir que apareçam na análise
-        vendas_periodo['Forma de entrega'] = vendas_periodo['Forma de entrega'].fillna('Não especificado').replace('', 'Não especificado')
+        # Preencher valores vazios com 'Mercado Envios' (identificado nos relatórios reais)
+        vendas_periodo['Forma de entrega'] = vendas_periodo['Forma de entrega'].fillna('Mercado Envios').replace(['', ' '], 'Mercado Envios')
         formas = vendas_periodo['Forma de entrega'].unique()
         
         for forma in formas:
