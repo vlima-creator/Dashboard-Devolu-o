@@ -244,20 +244,121 @@ else:
                 st.info("Sem dados de SKUs para exibir")
             st.markdown('</div>', unsafe_allow_html=True)
 
-    # Manter as outras abas com layout padrão para funcionalidade
+    # TAB 2: JANELAS (NOVO LAYOUT COM GRÁFICO MULTIEIXO + TABELA DETALHADA)
     with tab2:
-        st.subheader("Análise por Janelas de Tempo")
-        janelas_data = []
-        for janela in [30, 60, 90, 120, 150, 180]:
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-title">Evolução por Janela de Tempo</div>', unsafe_allow_html=True)
+        
+        # Coletar dados para o gráfico multieixo
+        janelas_list = [30, 60, 90, 120, 150, 180]
+        janelas_data_raw = []
+        
+        for janela in janelas_list:
             m = calcular_metricas(data['vendas'], data['matriz'], data['full'], data['max_date'], janela)
-            janelas_data.append({
+            janelas_data_raw.append({
                 'Período': f'{janela}d',
-                'Vendas': formatar_numero(m['vendas']),
-                'Taxa (%)': formatar_percentual(m['taxa_devolucao']),
-                'Devoluções': formatar_numero(m['devolucoes_vendas']),
-                'Impacto (R$)': formatar_brl(m['impacto_devolucao']),
+                'Período_num': janela,
+                'Vendas': m['vendas'],
+                'Devoluções': m['devolucoes_vendas'],
+                'Taxa': m['taxa_devolucao'] * 100,  # Converter para percentual
+                'Faturamento': m['faturamento_total'],
+                'Faturamento_Dev': m['faturamento_devolucoes'],
+                'Perda_Total': -m['perda_total'],
+                'Perda_Parcial': -m['perda_parcial'],
+                'Saudaveis': m['saudaveis'],
+                'Criticas': m['criticas'],
             })
-        st.dataframe(pd.DataFrame(janelas_data), use_container_width=True, hide_index=True)
+        
+        df_janelas_raw = pd.DataFrame(janelas_data_raw)
+        
+        # Criar gráfico com múltiplos eixos Y
+        fig = go.Figure()
+        
+        # Eixo Y1 (esquerdo): Vendas e Devoluções
+        fig.add_trace(go.Scatter(
+            x=df_janelas_raw['Período'],
+            y=df_janelas_raw['Vendas'],
+            mode='lines+markers',
+            name='Vendas',
+            line=dict(color='#3b82f6', width=2),
+            marker=dict(size=6),
+            yaxis='y1'
+        ))
+        
+        fig.add_trace(go.Scatter(
+            x=df_janelas_raw['Período'],
+            y=df_janelas_raw['Devoluções'],
+            mode='lines+markers',
+            name='Devoluções',
+            line=dict(color='#f59e0b', width=2),
+            marker=dict(size=6),
+            yaxis='y1'
+        ))
+        
+        # Eixo Y2 (direito): Taxa de Devolução
+        fig.add_trace(go.Scatter(
+            x=df_janelas_raw['Período'],
+            y=df_janelas_raw['Taxa'],
+            mode='lines+markers',
+            name='Taxa (%)',
+            line=dict(color='#ef4444', width=2),
+            marker=dict(size=6),
+            yaxis='y2'
+        ))
+        
+        # Configurar layout com dois eixos Y
+        fig.update_layout(
+            title='',
+            xaxis=dict(
+                title='Período',
+                showgrid=True,
+                gridcolor='#e5e7eb'
+            ),
+            yaxis=dict(
+                title='Vendas / Devoluções',
+                showgrid=True,
+                gridcolor='#e5e7eb',
+                side='left'
+            ),
+            yaxis2=dict(
+                title='Taxa (%)',
+                overlaying='y',
+                side='right'
+            ),
+            hovermode='x unified',
+            height=400,
+            margin=dict(r=80),
+            legend=dict(x=0.01, y=0.99)
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Tabela Consolidada com todas as métricas
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-title">Tabela Consolidada</div>', unsafe_allow_html=True)
+        
+        # Preparar dados formatados para exibição
+        tabela_data = []
+        for _, row in df_janelas_raw.iterrows():
+            tabela_data.append({
+                'Dias': row['Período_num'],
+                'Vendas': formatar_numero(row['Vendas']),
+                'Fat. Prod.': formatar_brl(row['Faturamento']),
+                'Dev.': row['Devoluções'],
+                'Taxa': f"{row['Taxa']:.1f}%",
+                'Fat. Dev.': formatar_brl(row['Faturamento_Dev']),
+                'Perda Total': formatar_brl(row['Perda_Total']),
+                'Perda Parcial': formatar_brl(row['Perda_Parcial']),
+                'Saud.': row['Saudaveis'],
+                'Imp. Saud.': formatar_brl(0),
+                'Crit.': row['Criticas'],
+                'Imp. Crit.': formatar_brl(0),
+            })
+        
+        df_tabela = pd.DataFrame(tabela_data)
+        st.dataframe(df_tabela, use_container_width=True, hide_index=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with tab3:
         st.subheader("Comparação Matriz vs Full")
