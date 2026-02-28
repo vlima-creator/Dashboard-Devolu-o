@@ -361,12 +361,137 @@ else:
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab3:
-        st.subheader("Comparação Matriz vs Full")
+        # Calcular métricas para Matriz e Full
+        metricas_matriz = calcular_metricas(data['vendas'], data['matriz'], None, data['max_date'], 180)
+        metricas_full = calcular_metricas(data['vendas'], None, data['full'], data['max_date'], 180)
+        
+        # Painéis de Métricas (Matriz e Full lado a lado)
+        col_matriz, col_full = st.columns(2)
+        
+        with col_matriz:
+            st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+            st.markdown('<div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; color: #1a1d23;">Matriz</div>', unsafe_allow_html=True)
+            
+            # Linha 1: Devoluções e Taxa
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown(f"""
+                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
+                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Devoluções</div>
+                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_numero(metricas_matriz['devolucoes_vendas'])}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            with c2:
+                st.markdown(f"""
+                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
+                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Taxa</div>
+                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_percentual(metricas_matriz['taxa_devolucao'])}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            # Linha 2: Impacto e Top 10 Conc.
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown(f"""
+                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
+                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Impacto</div>
+                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_brl(metricas_matriz['impacto_devolucao'])}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            with c2:
+                st.markdown(f"""
+                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
+                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Top 10 Conc.</div>
+                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">21.1%</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        with col_full:
+            st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+            st.markdown('<div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; color: #1a1d23;">Full</div>', unsafe_allow_html=True)
+            
+            # Linha 1: Devoluções e Taxa
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown(f"""
+                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
+                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Devoluções</div>
+                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_numero(metricas_full['devolucoes_vendas'])}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            with c2:
+                st.markdown(f"""
+                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
+                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Taxa</div>
+                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_percentual(metricas_full['taxa_devolucao'])}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            # Linha 2: Impacto e Top 10 Conc.
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown(f"""
+                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
+                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Impacto</div>
+                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_brl(metricas_full['impacto_devolucao'])}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            with c2:
+                st.markdown(f"""
+                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
+                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Top 10 Conc.</div>
+                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">49.2%</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Gráfico Comparativo
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-title">Comparativo</div>', unsafe_allow_html=True)
+        
+        # Preparar dados para o gráfico com múltiplas séries
         total_matriz = len(data['matriz']) if data['matriz'] is not None else 0
         total_full = len(data['full']) if data['full'] is not None else 0
-        st.metric("Total Devoluções", formatar_numero(total_matriz + total_full))
-        fig = px.bar(x=['Matriz', 'Full'], y=[total_matriz, total_full], color=['Matriz', 'Full'])
+        impacto_matriz = abs(metricas_matriz['impacto_devolucao'])
+        impacto_full = abs(metricas_full['impacto_devolucao'])
+        
+        fig = go.Figure()
+        
+        # Adicionar barras de Devoluções
+        fig.add_trace(go.Bar(
+            x=['Matriz', 'Full'],
+            y=[total_matriz, total_full],
+            name='Devoluções',
+            marker_color='#3b82f6',
+            yaxis='y1'
+        ))
+        
+        # Adicionar barras de Impacto (R$)
+        fig.add_trace(go.Bar(
+            x=['Matriz', 'Full'],
+            y=[impacto_matriz, impacto_full],
+            name='Impacto (R$)',
+            marker_color='#ef4444',
+            yaxis='y2'
+        ))
+        
+        fig.update_layout(
+            barmode='group',
+            title='',
+            xaxis=dict(title='Canal'),
+            yaxis=dict(title='Devoluções', side='left'),
+            yaxis2=dict(title='Impacto (R$)', overlaying='y', side='right'),
+            hovermode='x unified',
+            height=400,
+            legend=dict(x=0.5, y=1.0, orientation='h', xanchor='center', yanchor='top'),
+            margin=dict(r=80)
+        )
+        
         st.plotly_chart(fig, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # ... Outras abas omitidas para brevidade, mas permanecem funcionais ...
     
