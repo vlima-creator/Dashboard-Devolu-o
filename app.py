@@ -330,13 +330,14 @@ else:
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                com_pub = df_ads[df_ads['Tipo'].str.contains('Com')]['Vendas'].values[0] if any(df_ads['Tipo'].str.contains('Com')) else 0
-                st.metric("Com Publicidade", formatar_numero(com_pub))
+                com_pub = df_ads[df_ads['Tipo'].str.contains('Com')]['Vendas'].values[0] if any(df_ads['Tipo'].str.contains('Com')) else '0'
+                st.metric("Com Publicidade", com_pub)
             with col2:
-                sem_pub = df_ads[df_ads['Tipo'].str.contains('Sem')]['Vendas'].values[0] if any(df_ads['Tipo'].str.contains('Sem')) else 0
-                st.metric("Sem Publicidade", formatar_numero(sem_pub))
+                sem_pub = df_ads[df_ads['Tipo'].str.contains('Sem')]['Vendas'].values[0] if any(df_ads['Tipo'].str.contains('Sem')) else '0'
+                st.metric("Sem Publicidade", sem_pub)
             with col3:
-                st.metric("Total de Vendas", formatar_numero(df_ads['Vendas'].sum()))
+                total = df_ads['Vendas'].tolist()
+                st.metric("Total de Vendas", total[0] if total else '0')
             
             col1, col2 = st.columns(2)
             
@@ -423,15 +424,15 @@ else:
         
         with col1:
             st.subheader("📊 Cenário Atual")
-            st.metric("Devoluções", resultado['cenario_atual']['devolucoes'])
-            st.metric("Taxa de Devolução", f"{resultado['cenario_atual']['taxa']:.2f}%")
-            st.metric("Impacto Financeiro", f"R$ {resultado['cenario_atual']['impacto']/1000:.1f}k")
+            st.metric("Devoluções", formatar_numero(resultado['cenario_atual']['devolucoes']))
+            st.metric("Taxa de Devolução", formatar_percentual(resultado['cenario_atual']['taxa']/100))
+            st.metric("Impacto Financeiro", formatar_brl(resultado['cenario_atual']['impacto']))
         
         with col2:
             st.subheader("🎯 Cenário Simulado (-{:.0f}%)".format(reducao))
-            st.metric("Devoluções", resultado['cenario_simulado']['devolucoes'])
-            st.metric("Taxa de Devolução", f"{resultado['cenario_simulado']['taxa']:.2f}%")
-            st.metric("Impacto Financeiro", f"R$ {resultado['cenario_simulado']['impacto']/1000:.1f}k")
+            st.metric("Devoluções", formatar_numero(resultado['cenario_simulado']['devolucoes']))
+            st.metric("Taxa de Devolução", formatar_percentual(resultado['cenario_simulado']['taxa']/100))
+            st.metric("Impacto Financeiro", formatar_brl(resultado['cenario_simulado']['impacto']))
         
         # Gráfico de comparação
         comparacao_data = {
