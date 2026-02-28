@@ -7,6 +7,7 @@ from utils.parser import processar_arquivos
 from utils.metricas import calcular_metricas, calcular_qualidade_arquivo
 from utils.export import exportar_xlsx
 from utils.analises import analisar_frete, analisar_motivos, analisar_ads, analisar_skus, simular_reducao
+from utils.formatacao import formatar_brl, formatar_percentual, formatar_numero
 
 # Configuração da página
 st.set_page_config(
@@ -175,11 +176,11 @@ else:
         
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Vendas sem número (%)", f"{qualidade['vendas']['sem_numero_pct']:.1f}%")
+            st.metric("Vendas sem número (%)", formatar_percentual(qualidade['vendas']['sem_numero_pct']/100))
         with col2:
-            st.metric("Vendas sem data (%)", f"{qualidade['vendas']['sem_data_pct']:.1f}%")
+            st.metric("Vendas sem data (%)", formatar_percentual(qualidade['vendas']['sem_data_pct']/100))
         with col3:
-            st.metric("Vendas sem receita (%)", f"{qualidade['vendas']['sem_receita_pct']:.1f}%")
+            st.metric("Vendas sem receita (%)", formatar_percentual(qualidade['vendas']['sem_receita_pct']/100))
         
         # KPIs
         st.subheader("📊 KPIs Principais")
@@ -187,13 +188,13 @@ else:
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            st.metric("Total de Vendas", f"{metricas['vendas']:,}")
+            st.metric("Total de Vendas", formatar_numero(metricas['vendas']))
         with col2:
-            st.metric("Faturamento Total", f"R$ {metricas['faturamento_total']/1000:.1f}k")
+            st.metric("Faturamento Total", formatar_brl(metricas['faturamento_total']))
         with col3:
-            st.metric("Taxa de Devolução", f"{metricas['taxa_devolucao']*100:.2f}%")
+            st.metric("Taxa de Devolução", formatar_percentual(metricas['taxa_devolucao']))
         with col4:
-            st.metric("Impacto Financeiro", f"R$ {metricas['impacto_devolucao']/1000:.1f}k")
+            st.metric("Impacto Financeiro", formatar_brl(metricas['impacto_devolucao']))
         
         # Detalhes
         st.subheader("📈 Detalhes")
@@ -201,11 +202,11 @@ else:
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.metric("Devoluções", metricas['devolucoes_vendas'])
+            st.metric("Devoluções", formatar_numero(metricas['devolucoes_vendas']))
         with col2:
-            st.metric("Perda Total", f"R$ {metricas['perda_total']/1000:.1f}k")
+            st.metric("Perda Total", formatar_brl(metricas['perda_total']))
         with col3:
-            st.metric("Perda Parcial", f"R$ {metricas['perda_parcial']/1000:.1f}k")
+            st.metric("Perda Parcial", formatar_brl(metricas['perda_parcial']))
         
         col1, col2, col3 = st.columns(3)
         
@@ -225,10 +226,10 @@ else:
             m = calcular_metricas(data['vendas'], data['matriz'], data['full'], data['max_date'], janela)
             janelas_data.append({
                 'Período': f'{janela}d',
-                'Vendas': m['vendas'],
-                'Taxa (%)': m['taxa_devolucao'] * 100,
-                'Devoluções': m['devolucoes_vendas'],
-                'Impacto (R$)': m['impacto_devolucao'],
+                'Vendas': formatar_numero(m['vendas']),
+                'Taxa (%)': formatar_percentual(m['taxa_devolucao']),
+                'Devoluções': formatar_numero(m['devolucoes_vendas']),
+                'Impacto (R$)': formatar_brl(m['impacto_devolucao']),
             })
         
         df_janelas = pd.DataFrame(janelas_data)
@@ -252,11 +253,11 @@ else:
         
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Devoluções Matriz", total_matriz)
+            st.metric("Devoluções Matriz", formatar_numero(total_matriz))
         with col2:
-            st.metric("Devoluções Full", total_full)
+            st.metric("Devoluções Full", formatar_numero(total_full))
         with col3:
-            st.metric("Total", total)
+            st.metric("Total", formatar_numero(total))
         
         # Gráfico
         fig = go.Figure(data=[
@@ -329,11 +330,13 @@ else:
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                st.metric("Com Publicidade", f"{df_ads[df_ads['Tipo'].str.contains('Com')]['Vendas'].values[0] if any(df_ads['Tipo'].str.contains('Com')) else 0:,}")
+                com_pub = df_ads[df_ads['Tipo'].str.contains('Com')]['Vendas'].values[0] if any(df_ads['Tipo'].str.contains('Com')) else 0
+                st.metric("Com Publicidade", formatar_numero(com_pub))
             with col2:
-                st.metric("Sem Publicidade", f"{df_ads[df_ads['Tipo'].str.contains('Sem')]['Vendas'].values[0] if any(df_ads['Tipo'].str.contains('Sem')) else 0:,}")
+                sem_pub = df_ads[df_ads['Tipo'].str.contains('Sem')]['Vendas'].values[0] if any(df_ads['Tipo'].str.contains('Sem')) else 0
+                st.metric("Sem Publicidade", formatar_numero(sem_pub))
             with col3:
-                st.metric("Total de Vendas", f"{df_ads['Vendas'].sum():,}")
+                st.metric("Total de Vendas", formatar_numero(df_ads['Vendas'].sum()))
             
             col1, col2 = st.columns(2)
             
@@ -408,11 +411,11 @@ else:
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.metric("Vendas Totais", f"{resultado['vendas_totais']:,}")
+            st.metric("Vendas Totais", formatar_numero(resultado['vendas_totais']))
         with col2:
-            st.metric("Faturamento Total", f"R$ {resultado['faturamento_total']/1000:.1f}k")
+            st.metric("Faturamento Total", formatar_brl(resultado['faturamento_total']))
         with col3:
-            st.metric("Economia Potencial", f"R$ {resultado['economia']/1000:.1f}k", delta=f"{reducao}%")
+            st.metric("Economia Potencial", formatar_brl(resultado['economia']), delta=formatar_percentual(reducao/100))
         
         st.markdown("---")
         
