@@ -538,7 +538,7 @@ else:
         st.markdown('<div class="chart-container">', unsafe_allow_html=True)
         st.markdown('<div class="chart-title">Distribuição de Motivos</div>', unsafe_allow_html=True)
         
-        df_motivos = analisar_motivos(data['matriz'], data['full'], data['max_date'], janela_global)
+        df_motivos = analisar_motivos(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_global)
         
         if len(df_motivos) > 0:
             df_motivos_sorted = df_motivos.sort_values('Quantidade', ascending=True)

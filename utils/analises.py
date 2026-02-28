@@ -71,19 +71,29 @@ def analisar_frete(vendas, matriz, full, max_date, dias_atras):
     
     return pd.DataFrame(frete_data) if frete_data else pd.DataFrame()
 
-def analisar_motivos(matriz, full, max_date, dias_atras):
+def analisar_motivos(vendas, matriz, full, max_date, dias_atras):
     """
-    Análise de motivos de devolução.
-    Os dados já chegam filtrados pelo cabeçalho global.
+    Análise de motivos de devolução cruzando com dados de vendas.
     """
     
     if matriz is None:
         matriz = pd.DataFrame()
     if full is None:
         full = pd.DataFrame()
+    if vendas is None:
+        vendas = pd.DataFrame()
     
     todas_dev = pd.concat([matriz, full], ignore_index=True)
     
+    # Criar mapa de vendas para cruzamento rápido
+    vendas_map = {}
+    if not vendas.empty and 'N.º de venda' in vendas.columns:
+        # Garantir que N.º de venda seja string para comparação
+        vendas_temp = vendas.copy()
+        vendas_temp['N.º de venda'] = vendas_temp['N.º de venda'].astype(str)
+        for _, row in vendas_temp.iterrows():
+            vendas_map[row['N.º de venda']] = row
+            
     motivos_data = []
     
     if len(todas_dev) > 0 and 'Motivo do resultado' in todas_dev.columns:
@@ -92,22 +102,37 @@ def analisar_motivos(matriz, full, max_date, dias_atras):
             if motivo != '' and motivo != 'nan':
                 return motivo
             
-            estado = str(row.get('Estado', '')).lower()
-            status = str(row.get('Descrição do status', '')).lower()
+            num_venda = str(row.get('N.º de venda', ''))
+            venda_info = vendas_map.get(num_venda, {})
             
-            if 'te demos o dinheiro' in estado or 'te demos o dinheiro' in status:
-                return 'Reembolso ao Vendedor'
-            if 'reembolso' in estado or 'reembolsamos' in status:
+            # Pegar informações de estado e status tanto da devolução quanto da venda
+            estado_dev = str(row.get('Estado', '')).lower()
+            status_dev = str(row.get('Descrição do status', '')).lower()
+            estado_venda = str(venda_info.get('Estado', '')).lower()
+            status_venda = str(venda_info.get('Descrição do status', '')).lower()
+            
+            # Prioridade 1: Motivos de cancelamento explícitos no relatório de vendas
+            if 'estoque' in status_venda or 'estoque' in estado_venda:
+                return 'Cancelado: Falta de Estoque'
+            if 'arrependeu' in status_venda or 'arrependimento' in status_venda:
+                return 'Cancelado: Arrependimento do Comprador'
+            if 'você cancelou' in estado_venda:
+                return 'Cancelado pelo Vendedor'
+            if 'cancelada pelo comprador' in estado_venda:
+                return 'Cancelado pelo Comprador'
+            
+            # Prioridade 2: Lógica baseada no estado da devolução/venda
+            if 'te demos o dinheiro' in estado_dev or 'te demos o dinheiro' in status_dev or 'te demos o dinheiro' in status_venda:
+                return 'Reembolso ao Vendedor (Proteção)'
+            if 'reembolso' in estado_dev or 'reembolsamos' in status_dev or 'reembolso' in estado_venda:
                 return 'Reembolso ao Comprador'
-            if 'mediação' in estado or 'mediação' in status:
+            if 'mediação' in estado_dev or 'mediação' in status_dev or 'mediação' in status_venda:
                 return 'Finalizado via Mediação'
-            if 'cancelada' in estado or 'cancelada' in status:
-                return 'Venda Cancelada'
-            if 'não entregue' in estado or 'não foi feita' in estado:
+            if 'não entregue' in estado_dev or 'não foi feita' in estado_dev:
                 return 'Devolução não realizada'
-            if 'enviamos de volta' in estado or 'devolvemos o produto ao comprador' in estado:
+            if 'enviamos de volta' in estado_dev or 'devolvemos o produto ao comprador' in estado_dev:
                 return 'Produto devolvido ao comprador'
-            if 'devolvido' in estado or 'devolução finalizada' in estado:
+            if 'devolvido' in estado_dev or 'devolução finalizada' in estado_dev:
                 return 'Devolução Concluída'
             
             return 'Outros Motivos de Devolução'
