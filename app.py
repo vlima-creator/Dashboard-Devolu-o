@@ -82,6 +82,40 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         margin-bottom: 20px;
     }
+    
+    /* Estilo do Simulador com Barra Interativa */
+    .simulator-container {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid #e6e9ef;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+    
+    .simulator-bar {
+        display: flex;
+        gap: 0;
+        margin-bottom: 20px;
+        cursor: pointer;
+        border-radius: 4px;
+        overflow: hidden;
+        height: 24px;
+    }
+    
+    .simulator-bar-yellow {
+        background-color: #ffd700;
+        height: 100%;
+        border-radius: 4px 0 0 4px;
+        transition: width 0.1s ease;
+    }
+    
+    .simulator-bar-dark {
+        background-color: #4a4a4a;
+        height: 100%;
+        flex: 1;
+        border-radius: 0 4px 4px 0;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -776,28 +810,24 @@ else:
         # Título principal
         st.markdown("<h3 style='margin-bottom: 20px;'>Simulador de Redução de Devoluções</h3>", unsafe_allow_html=True)
         
-        # Exibir taxa atual
-        st.markdown(f"<p style='color: #6e7787; font-size: 0.9rem; margin-bottom: 10px;'>Redução simulada: <strong style='color: #1a1d23; font-size: 1.1rem;'>10%</strong></p>", unsafe_allow_html=True)
+        # Slider com porcentagem (escondido, apenas para lógica)
+        max_slider = int(taxa_atual) if taxa_atual > 0 else 10
+        reducao_pct = st.slider("Redução desejada (%)", 0, max_slider, min(1, max_slider), key="sim_reducao_pct", label_visibility="collapsed")
         
-        # Barra de progresso visual
-        reducao_pct = 10  # Valor fixo para demonstração
+        # Exibir taxa atual e barra visual unificada
         progress_width = min(reducao_pct, 100)
         st.markdown(f"""
-            <div style="display: flex; gap: 8px; margin-bottom: 20px;">
-                <div style="flex: 1; height: 20px; background-color: #f0f0f0; border-radius: 4px; overflow: hidden;">
-                    <div style="width: {progress_width}%; height: 100%; background-color: #ffd700; border-radius: 4px;"></div>
+            <div class="simulator-container">
+                <p style='color: #6e7787; font-size: 0.9rem; margin-bottom: 10px;'>Redução simulada: <strong style='color: #1a1d23; font-size: 1.1rem;'>{reducao_pct}%</strong></p>
+                <div class="simulator-bar">
+                    <div class="simulator-bar-yellow" style="width: {progress_width}%;"></div>
+                    <div class="simulator-bar-dark"></div>
                 </div>
-                <div style="width: {100 - progress_width}%; height: 20px; background-color: #4a4a4a; border-radius: 4px;"></div>
             </div>
         """, unsafe_allow_html=True)
         
-        # Slider com porcentagem
-        max_slider = int(taxa_atual) if taxa_atual > 0 else 10
-        reducao_pct = st.slider("Redução desejada (%)", 0, max_slider, min(1, max_slider), key="sim_reducao_pct")
-        
         # Cálculos baseados em porcentagem
         nova_taxa = max(taxa_atual - reducao_pct, 0)
-        diff_pct = taxa_atual - nova_taxa
         vendas_totais = metricas_sim['vendas']
         dev_evitadas = int((reducao_pct / 100) * vendas_totais) if vendas_totais > 0 else 0
         dinheiro_recuperado = dev_evitadas * perda_media
