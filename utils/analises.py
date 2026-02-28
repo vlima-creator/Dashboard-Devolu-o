@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from utils.formatacao import formatar_brl, formatar_percentual, formatar_numero
 
 def analisar_frete(vendas, matriz, full, max_date, dias_atras):
     """Análise de frete e forma de entrega"""
@@ -63,13 +62,7 @@ def analisar_frete(vendas, matriz, full, max_date, dias_atras):
                 'Impacto (R$)': -dev_valor,
             })
     
-    df = pd.DataFrame(frete_data) if frete_data else pd.DataFrame()
-    if len(df) > 0:
-        df['Vendas'] = df['Vendas'].apply(formatar_numero)
-        df['Devoluções'] = df['Devoluções'].apply(formatar_numero)
-        df['Taxa (%)'] = df['Taxa (%)'].apply(lambda x: formatar_percentual(x/100))
-        df['Impacto (R$)'] = df['Impacto (R$)'].apply(formatar_brl)
-    return df
+    return pd.DataFrame(frete_data) if frete_data else pd.DataFrame()
 
 def analisar_motivos(matriz, full, max_date, dias_atras):
     """Análise de motivos de devolução"""
@@ -98,11 +91,7 @@ def analisar_motivos(matriz, full, max_date, dias_atras):
                 'Percentual (%)': (count / len(todas_dev) * 100) if len(todas_dev) > 0 else 0,
             })
     
-    df = pd.DataFrame(motivos_data) if motivos_data else pd.DataFrame()
-    if len(df) > 0:
-        df['Quantidade'] = df['Quantidade'].apply(formatar_numero)
-        df['Percentual (%)'] = df['Percentual (%)'].apply(lambda x: formatar_percentual(x/100))
-    return df
+    return pd.DataFrame(motivos_data) if motivos_data else pd.DataFrame()
 
 def analisar_ads(vendas, matriz, full, max_date, dias_atras):
     """Análise de vendas por publicidade (Ads)"""
@@ -173,14 +162,7 @@ def analisar_ads(vendas, matriz, full, max_date, dias_atras):
                 'Impacto (R$)': -receita_dev,
             })
     
-    df = pd.DataFrame(ads_data) if ads_data else pd.DataFrame()
-    if len(df) > 0:
-        df['Vendas'] = df['Vendas'].apply(formatar_numero)
-        df['Devoluções'] = df['Devoluções'].apply(formatar_numero)
-        df['Taxa (%)'] = df['Taxa (%)'].apply(lambda x: formatar_percentual(x/100))
-        df['Receita (R$)'] = df['Receita (R$)'].apply(formatar_brl)
-        df['Impacto (R$)'] = df['Impacto (R$)'].apply(formatar_brl)
-    return df
+    return pd.DataFrame(ads_data) if ads_data else pd.DataFrame()
 
 def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=10):
     """Análise de SKUs com maior risco"""
@@ -259,11 +241,6 @@ def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=10):
     
     if len(df_skus) > 0:
         df_skus = df_skus.sort_values('Score Risco', ascending=False).head(top_n)
-        df_skus['Vendas'] = df_skus['Vendas'].apply(formatar_numero)
-        df_skus['Devoluções'] = df_skus['Devoluções'].apply(formatar_numero)
-        df_skus['Taxa (%)'] = df_skus['Taxa (%)'].apply(lambda x: formatar_percentual(x/100))
-        df_skus['Receita (R$)'] = df_skus['Receita (R$)'].apply(formatar_brl)
-        df_skus['Impacto (R$)'] = df_skus['Impacto (R$)'].apply(formatar_brl)
     
     return df_skus
 
