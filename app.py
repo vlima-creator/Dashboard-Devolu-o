@@ -738,34 +738,53 @@ else:
         else:
             st.info("Sem dados disponíveis")
 
-    # TAB 8: SIMULADOR
+    # TAB 8: SIMULADOR (NOVO LAYOUT)
     with tab8:
-        st.subheader("🎮 Simulador de Redução de Devoluções")
-        col1, col2 = st.columns(2)
-        with col1:
-            janela_sim = st.slider("Período (dias)", 30, 180, 180, key="sim_janela")
-        with col2:
-            reducao = st.slider("Redução desejada (%)", 0, 100, 10, key="sim_reducao")
+        # Calcular métricas base para o simulador
+        metricas_sim = calcular_metricas(data['vendas'], data['matriz'], data['full'], data['max_date'], 180)
+        taxa_atual = metricas_sim['taxa_devolucao'] * 100  # Em percentual
+        total_dev = metricas_sim['devolucoes_vendas']
+        impacto_total = abs(metricas_sim['impacto_devolucao'])
+        perda_media = (impacto_total / total_dev) if total_dev > 0 else 0
         
-        resultado = simular_reducao(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_sim, reducao)
+        # Painel do Simulador
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-title">Simulador de Impacto</div>', unsafe_allow_html=True)
         
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Vendas Totais", formatar_numero(resultado['vendas_totais']))
-        with col2:
-            st.metric("Faturamento", formatar_brl(resultado['faturamento_total']))
-        with col3:
-            st.metric("Economia", formatar_brl(resultado['economia']))
+        # Slider de redução em pontos percentuais
+        reducao_pp = st.slider("Redução desejada (pp)", 0, int(taxa_atual) if taxa_atual > 0 else 10, 1, key="sim_reducao_pp")
         
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader("Cenário Atual")
-            st.metric("Devoluções", resultado['cenario_atual']['devolucoes'])
-            st.metric("Taxa", f"{resultado['cenario_atual']['taxa']:.2f}%")
-        with col2:
-            st.subheader("Cenário Simulado")
-            st.metric("Devoluções", resultado['cenario_simulado']['devolucoes'])
-            st.metric("Taxa", f"{resultado['cenario_simulado']['taxa']:.2f}%")
+        st.markdown(f"""
+            <div style="color: #6e7787; font-size: 0.85rem; margin-top: -10px; margin-bottom: 10px;">
+                Redução desejada: <strong style="color: #1a1d23;">{reducao_pp}pp</strong>
+            </div>
+            <div style="color: #6e7787; font-size: 0.85rem;">
+                Perda média por devolução: <strong style="color: #1a1d23;">{formatar_brl(perda_media)}</strong>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Calcular nova taxa e economia
+        nova_taxa = max(taxa_atual - reducao_pp, 0)
+        diff_pp = taxa_atual - nova_taxa
+        
+        # Devoluções evitadas
+        vendas_totais = metricas_sim['vendas']
+        dev_evitadas = int((diff_pp / 100) * vendas_totais) if vendas_totais > 0 else 0
+        dinheiro_recuperado = dev_evitadas * perda_media
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # 3 Cartões de resultado
+        c1, c2, c3 = st.columns(3)
+        
+        with c1:
+            render_metric_card("TAXA ATUAL", f"{taxa_atual:.1f}%", "", "🎯")
+        with c2:
+            render_metric_card("NOVA TAXA", f"{nova_taxa:.1f}%", f"-{reducao_pp}pp", "📈")
+        with c3:
+            render_metric_card("DINHEIRO RECUPERADO", formatar_brl(dinheiro_recuperado), f"{dev_evitadas} devoluções evitadas", "📋")
     
     # Export
     st.markdown("---")
