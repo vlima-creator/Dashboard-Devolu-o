@@ -360,6 +360,7 @@ else:
         st.dataframe(df_tabela, use_container_width=True, hide_index=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
+    # TAB 3: MATRIZ/FULL
     with tab3:
         # Calcular métricas para Matriz e Full
         metricas_matriz = calcular_metricas(data['vendas'], data['matriz'], None, data['max_date'], 180)
@@ -493,7 +494,126 @@ else:
         st.plotly_chart(fig, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ... Outras abas omitidas para brevidade, mas permanecem funcionais ...
+    # TAB 4: FRETE
+    with tab4:
+        st.subheader("🚚 Análise de Frete e Forma de Entrega")
+        janela_frete = st.slider("Período (dias)", 30, 180, 180, key="frete_janela")
+        df_frete = analisar_frete(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_frete)
+        if len(df_frete) > 0:
+            st.dataframe(df_frete, use_container_width=True, hide_index=True)
+        else:
+            st.info("Sem dados disponíveis")
+
+    # TAB 5: MOTIVOS (NOVO LAYOUT)
+    with tab5:
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-title">Distribuição de Motivos</div>', unsafe_allow_html=True)
+        
+        janela_motivos = st.slider("Período (dias)", 30, 180, 180, key="motivos_janela")
+        df_motivos = analisar_motivos(data['matriz'], data['full'], data['max_date'], janela_motivos)
+        
+        if len(df_motivos) > 0:
+            # Ordenar por quantidade em ordem decrescente para o gráfico
+            df_motivos_sorted = df_motivos.sort_values('Quantidade', ascending=True)
+            
+            # Gráfico de barras horizontais
+            fig = go.Figure(go.Bar(
+                x=df_motivos_sorted['Quantidade'],
+                y=df_motivos_sorted['Motivo'],
+                orientation='h',
+                marker_color='#f59e0b',
+                text=df_motivos_sorted['Quantidade'],
+                textposition='outside'
+            ))
+            fig.update_layout(
+                title='',
+                xaxis=dict(title='Quantidade', showgrid=True, gridcolor='#e5e7eb'),
+                yaxis=dict(title=''),
+                height=400,
+                margin=dict(l=250, r=50)
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Sem dados disponíveis")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Barra de busca e tabela
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        
+        col_search, col_empty = st.columns([1, 4])
+        with col_search:
+            search_motivo = st.text_input("Buscar motivo...", "")
+        
+        if len(df_motivos) > 0:
+            # Filtrar tabela por busca
+            if search_motivo:
+                df_motivos_filtered = df_motivos[df_motivos['Motivo'].str.contains(search_motivo, case=False, na=False)]
+            else:
+                df_motivos_filtered = df_motivos
+            
+            # Formatar tabela
+            df_motivos_display = df_motivos_filtered.copy()
+            df_motivos_display['%'] = df_motivos_display['Percentual (%)'].apply(lambda x: f"{x:.1f}%")
+            df_motivos_display = df_motivos_display[['Motivo', 'Quantidade', '%']]
+            
+            st.dataframe(df_motivos_display, use_container_width=True, hide_index=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # TAB 6: ADS
+    with tab6:
+        st.subheader("📢 Análise de Vendas por Publicidade")
+        janela_ads = st.slider("Período (dias)", 30, 180, 180, key="ads_janela")
+        df_ads = analisar_ads(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_ads)
+        if len(df_ads) > 0:
+            st.dataframe(df_ads, use_container_width=True, hide_index=True)
+        else:
+            st.info("Sem dados disponíveis")
+
+    # TAB 7: SKUS
+    with tab7:
+        st.subheader("📊 Análise de SKUs com Maior Risco")
+        col1, col2 = st.columns(2)
+        with col1:
+            janela_skus = st.slider("Período (dias)", 30, 180, 180, key="skus_janela")
+        with col2:
+            top_n = st.slider("Top N SKUs", 5, 20, 10, key="skus_top")
+        
+        df_skus = analisar_skus(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_skus, top_n)
+        if len(df_skus) > 0:
+            st.dataframe(df_skus, use_container_width=True, hide_index=True)
+        else:
+            st.info("Sem dados disponíveis")
+
+    # TAB 8: SIMULADOR
+    with tab8:
+        st.subheader("🎮 Simulador de Redução de Devoluções")
+        col1, col2 = st.columns(2)
+        with col1:
+            janela_sim = st.slider("Período (dias)", 30, 180, 180, key="sim_janela")
+        with col2:
+            reducao = st.slider("Redução desejada (%)", 0, 100, 10, key="sim_reducao")
+        
+        resultado = simular_reducao(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_sim, reducao)
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Vendas Totais", formatar_numero(resultado['vendas_totais']))
+        with col2:
+            st.metric("Faturamento", formatar_brl(resultado['faturamento_total']))
+        with col3:
+            st.metric("Economia", formatar_brl(resultado['economia']))
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("Cenário Atual")
+            st.metric("Devoluções", resultado['cenario_atual']['devolucoes'])
+            st.metric("Taxa", f"{resultado['cenario_atual']['taxa']:.2f}%")
+        with col2:
+            st.subheader("Cenário Simulado")
+            st.metric("Devoluções", resultado['cenario_simulado']['devolucoes'])
+            st.metric("Taxa", f"{resultado['cenario_simulado']['taxa']:.2f}%")
     
     # Export
     st.markdown("---")
