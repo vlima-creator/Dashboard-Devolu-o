@@ -595,19 +595,6 @@ else:
                 hovermode='closest',
                 showlegend=False
             )
-,
-                yaxis=dict(
-                    title='',
-                    tickfont=dict(size=11)
-                ),
-                height=altura_total,
-                margin=dict(l=300, r=100, t=20, b=60),
-                plot_bgcolor='#ffffff',
-                paper_bgcolor='#ffffff',
-                font=dict(family='Arial, sans-serif', size=11, color='#1a1d23'),
-                hovermode='closest',
-                showlegend=False
-            )
 
             st.plotly_chart(fig, use_container_width=True)
         else:
