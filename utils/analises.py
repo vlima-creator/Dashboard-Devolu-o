@@ -125,12 +125,53 @@ def analisar_ads(vendas, matriz, full, max_date, dias_atras):
     ads_data = []
     
     if 'Venda por publicidade' in vendas_periodo.columns:
-        for pub_type in ['Sim', 'Não']:
-            vendas_pub = vendas_periodo[vendas_periodo['Venda por publicidade'] == pub_type]
-            total_vendas = len(vendas_pub)
+        # Processar Ads (Sim)
+        vendas_pub = vendas_periodo[vendas_periodo['Venda por publicidade'] == 'Sim']
+        total_vendas = len(vendas_pub)
+        
+        if total_vendas > 0:
+            dev_count = 0
+            receita_total = 0.0
+            impacto_total = 0.0
             
-            if total_vendas == 0:
-                continue
+            vendas_devolvidas = set()
+            for _, venda in vendas_pub.iterrows():
+                receita = venda.get('Receita por produtos (BRL)', 0)
+                if pd.isna(receita): receita = 0.0
+                receita_total += float(receita)
+                
+                num_venda = str(venda.get('N.º de venda', ''))
+                if num_venda in dev_map and num_venda not in vendas_devolvidas:
+                    vendas_devolvidas.add(num_venda)
+                    dev_count += 1
+                    for dev in dev_map[num_venda]:
+                        # Usar Cancelamentos e reembolsos para impacto real
+                        reembolso = dev.get('Cancelamentos e reembolsos (BRL)', None)
+                        if reembolso is None or pd.isna(reembolso):
+                            reembolso = 0.0
+                        reembolso = float(reembolso)
+                        if reembolso == 0:
+                            fallback = dev.get('Receita por produtos (BRL)', 0)
+                            if pd.isna(fallback): fallback = 0.0
+                            reembolso = float(fallback)
+                        impacto_total += reembolso
+            
+            taxa = (dev_count / total_vendas * 100) if total_vendas > 0 else 0
+            
+            ads_data.append({
+                'Tipo': 'Com Publicidade',
+                'Vendas': total_vendas,
+                'Devoluções': dev_count,
+                'Taxa (%)': round(taxa, 1),
+                'Receita (R$)': round(receita_total, 2),
+                'Impacto (R$)': round(-impacto_total, 2),
+            })
+        
+        # Processar Orgânico (vazio ou não 'Sim')
+        vendas_pub = vendas_periodo[vendas_periodo['Venda por publicidade'] != 'Sim']
+        total_vendas = len(vendas_pub)
+        
+        if total_vendas > 0:
             
             dev_count = 0
             receita_total = 0.0
@@ -161,7 +202,7 @@ def analisar_ads(vendas, matriz, full, max_date, dias_atras):
             taxa = (dev_count / total_vendas * 100) if total_vendas > 0 else 0
             
             ads_data.append({
-                'Tipo': 'Com Publicidade' if pub_type == 'Sim' else 'Sem Publicidade',
+                'Tipo': 'Orgânico',
                 'Vendas': total_vendas,
                 'Devoluções': dev_count,
                 'Taxa (%)': round(taxa, 1),

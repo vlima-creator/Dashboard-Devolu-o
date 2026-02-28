@@ -591,7 +591,7 @@ else:
                     ads_taxa = float(row.get('Taxa (%)', 0))
                     ads_impacto = float(row.get('Impacto (R$)', 0))
                     ads_fat = float(row.get('Receita (R$)', 0))
-                elif 'Sem Publicidade' in str(row.get('Tipo', '')):
+                elif 'Orgânico' in str(row.get('Tipo', '')):
                     org_vendas = int(row.get('Vendas', 0))
                     org_dev = int(row.get('Devoluções', 0))
                     org_taxa = float(row.get('Taxa (%)', 0))
