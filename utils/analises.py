@@ -87,7 +87,10 @@ def analisar_motivos(matriz, full, max_date, dias_atras):
     motivos_data = []
     
     if len(todas_dev) > 0 and 'Motivo do resultado' in todas_dev.columns:
-        motivos = todas_dev['Motivo do resultado'].dropna().value_counts()
+        # Preencher nulos e vazios com 'Motivo não especificado'
+        todas_dev['Motivo do resultado'] = todas_dev['Motivo do resultado'].fillna('Motivo não especificado').replace(['', ' '], 'Motivo não especificado')
+        
+        motivos = todas_dev['Motivo do resultado'].value_counts()
         total_com_motivo = motivos.sum()
         
         for motivo, count in motivos.items():
