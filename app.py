@@ -773,37 +773,45 @@ else:
         impacto_total = abs(metricas_sim['impacto_devolucao'])
         perda_media = (impacto_total / total_dev) if total_dev > 0 else 0
         
-        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-        st.markdown('<div class="chart-title">Simulador de Impacto</div>', unsafe_allow_html=True)
+        # Título principal
+        st.markdown("<h3 style='margin-bottom: 20px;'>Simulador de Redução de Devoluções</h3>", unsafe_allow_html=True)
         
-        max_slider = int(taxa_atual) if taxa_atual > 0 else 10
-        reducao_pp = st.slider("Redução desejada (pp)", 0, max_slider, min(1, max_slider), key="sim_reducao_pp")
+        # Exibir taxa atual
+        st.markdown(f"<p style='color: #6e7787; font-size: 0.9rem; margin-bottom: 10px;'>Redução simulada: <strong style='color: #1a1d23; font-size: 1.1rem;'>10%</strong></p>", unsafe_allow_html=True)
         
+        # Barra de progresso visual
+        reducao_pct = 10  # Valor fixo para demonstração
+        progress_width = min(reducao_pct, 100)
         st.markdown(f"""
-            <div style="color: #6e7787; font-size: 0.85rem; margin-top: -10px; margin-bottom: 10px;">
-                Redução desejada: <strong style="color: #1a1d23;">{reducao_pp}pp</strong>
-            </div>
-            <div style="color: #6e7787; font-size: 0.85rem;">
-                Perda média por devolução: <strong style="color: #1a1d23;">{formatar_brl(perda_media)}</strong>
+            <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                <div style="flex: 1; height: 20px; background-color: #f0f0f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: {progress_width}%; height: 100%; background-color: #ffd700; border-radius: 4px;"></div>
+                </div>
+                <div style="width: {100 - progress_width}%; height: 20px; background-color: #4a4a4a; border-radius: 4px;"></div>
             </div>
         """, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
         
-        nova_taxa = max(taxa_atual - reducao_pp, 0)
-        diff_pp = taxa_atual - nova_taxa
+        # Slider com porcentagem
+        max_slider = int(taxa_atual) if taxa_atual > 0 else 10
+        reducao_pct = st.slider("Redução desejada (%)", 0, max_slider, min(1, max_slider), key="sim_reducao_pct")
+        
+        # Cálculos baseados em porcentagem
+        nova_taxa = max(taxa_atual - reducao_pct, 0)
+        diff_pct = taxa_atual - nova_taxa
         vendas_totais = metricas_sim['vendas']
-        dev_evitadas = int((diff_pp / 100) * vendas_totais) if vendas_totais > 0 else 0
+        dev_evitadas = int((reducao_pct / 100) * vendas_totais) if vendas_totais > 0 else 0
         dinheiro_recuperado = dev_evitadas * perda_media
         
         st.markdown("<br>", unsafe_allow_html=True)
         
+        # Cards de resultados
         c1, c2, c3 = st.columns(3)
         with c1:
-            render_metric_card("TAXA ATUAL", formatar_pct_direto(taxa_atual), "", "🎯")
+            render_metric_card("DEVOLUÇÕES SIMULADAS", formatar_numero(dev_evitadas), f"Antes: {formatar_numero(int(total_dev))}", "📦")
         with c2:
-            render_metric_card("NOVA TAXA", formatar_pct_direto(nova_taxa), f"-{reducao_pp}pp", "📈")
+            render_metric_card("PERDA SIMULADA", formatar_brl(dinheiro_recuperado), f"Antes: {formatar_brl(impacto_total)}", "💰")
         with c3:
-            render_metric_card("DINHEIRO RECUPERADO", formatar_brl(dinheiro_recuperado), f"{formatar_numero(dev_evitadas)} devoluções evitadas", "📋")
+            render_metric_card("ECONOMIA ESTIMADA", formatar_brl(dinheiro_recuperado), "Redução de perda", "📈")
     
     # ─── EXPORT ───
     st.markdown("---")
