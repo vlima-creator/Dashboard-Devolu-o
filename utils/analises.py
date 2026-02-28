@@ -164,7 +164,7 @@ def analisar_ads(vendas, matriz, full, max_date, dias_atras):
     
     return pd.DataFrame(ads_data) if ads_data else pd.DataFrame()
 
-def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=10):
+def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=None):
     """Análise de SKUs com maior risco"""
     
     if matriz is None:
@@ -183,6 +183,7 @@ def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=10):
     todas_dev = pd.concat([matriz, full], ignore_index=True)
     dev_map = {}
     
+    # Criar mapa de reembolsos (coluna de cancelamentos/reembolsos)
     if len(todas_dev) > 0 and 'N.º de venda' in todas_dev.columns:
         for _, row in todas_dev.iterrows():
             num_venda = str(row['N.º de venda'])
@@ -203,6 +204,8 @@ def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=10):
                     'devolucoes': 0,
                     'receita': 0,
                     'impacto': 0,
+                    'reembolso': 0,
+                    'custo_dev': 0,
                 }
             
             skus_data[sku]['vendas'] += 1
@@ -216,33 +219,64 @@ def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=10):
             if num_venda in dev_map:
                 skus_data[sku]['devolucoes'] += len(dev_map[num_venda])
                 for dev in dev_map[num_venda]:
-                    reembolso = dev.get('Receita por produtos (BRL)', 0) or 0
-                    if pd.isna(reembolso):
-                        reembolso = 0
-                    skus_data[sku]['impacto'] += reembolso
+                    # Impacto (receita do produto devolvido)
+                    imp = dev.get('Receita por produtos (BRL)', 0) or 0
+                    if pd.isna(imp):
+                        imp = 0
+                    skus_data[sku]['impacto'] += imp
+                    
+                    # Reembolso (cancelamentos e reembolsos)
+                    reemb = dev.get('Cancelamentos e reembolsos (BRL)', 0) or 0
+                    if pd.isna(reemb):
+                        reemb = 0
+                    skus_data[sku]['reembolso'] += reemb
+                    
+                    # Custo de devolução (custos de envio)
+                    custo = dev.get('Custos de envio (BRL)', 0) or 0
+                    if pd.isna(custo):
+                        custo = 0
+                    skus_data[sku]['custo_dev'] += custo
+    
+    # Calcular total de devoluções para concentração
+    total_devolucoes = sum(d['devolucoes'] for d in skus_data.values())
     
     # Converter para DataFrame e calcular taxa
     skus_list = []
-    for sku, data in skus_data.items():
-        taxa = (data['devolucoes'] / data['vendas'] * 100) if data['vendas'] > 0 else 0
-        score_risco = taxa * data['impacto'] / 100 if data['impacto'] > 0 else 0
+    for sku, d in skus_data.items():
+        if d['devolucoes'] == 0:
+            continue  # Só incluir SKUs com devolução
+        
+        taxa = (d['devolucoes'] / d['vendas'] * 100) if d['vendas'] > 0 else 0
+        score_risco = taxa * d['impacto'] / 100 if d['impacto'] > 0 else 0
+        
+        # Classificação
+        if taxa >= 15:
+            classe = 'Crítica'
+        elif taxa >= 8:
+            classe = 'Atenção'
+        else:
+            classe = 'Neutra'
         
         skus_list.append({
             'SKU': sku,
-            'Vendas': data['vendas'],
-            'Devoluções': data['devolucoes'],
-            'Taxa (%)': taxa,
-            'Receita (R$)': data['receita'],
-            'Impacto (R$)': -data['impacto'],
-            'Score Risco': score_risco,
+            'Vendas': d['vendas'],
+            'Dev.': d['devolucoes'],
+            'Taxa': taxa,
+            'Impacto': -d['impacto'],
+            'Reemb.': -abs(d['reembolso']),
+            'Custo Dev.': -abs(d['custo_dev']),
+            'Risco': round(score_risco, 3),
+            'Classe': classe,
         })
     
     df_skus = pd.DataFrame(skus_list)
     
     if len(df_skus) > 0:
-        df_skus = df_skus.sort_values('Score Risco', ascending=False).head(top_n)
+        df_skus = df_skus.sort_values('Dev.', ascending=False)
+        if top_n is not None:
+            df_skus = df_skus.head(top_n)
     
-    return df_skus
+    return df_skus, total_devolucoes
 
 def simular_reducao(vendas, matriz, full, max_date, dias_atras, reducao_percentual):
     """Simula o impacto de redução na taxa de devolução"""

@@ -221,14 +221,14 @@ else:
             st.markdown('<div class="chart-container">', unsafe_allow_html=True)
             st.markdown('<div class="chart-title">Top 5 SKUs por Devoluções</div>', unsafe_allow_html=True)
             
-            df_skus_top = analisar_skus(data['vendas'], data['matriz'], data['full'], data['max_date'], 180, 5)
+            df_skus_top, _ = analisar_skus(data['vendas'], data['matriz'], data['full'], data['max_date'], 180, 5)
             
             if not df_skus_top.empty:
                 # Inverter para que o maior fique no topo no gráfico de barras horizontais
-                df_skus_top = df_skus_top.sort_values('Devoluções', ascending=True)
+                df_skus_top = df_skus_top.sort_values('Dev.', ascending=True)
                 
                 fig_bar = go.Figure(go.Bar(
-                    x=df_skus_top['Devoluções'],
+                    x=df_skus_top['Dev.'],
                     y=df_skus_top['SKU'],
                     orientation='h',
                     marker_color='#f59e0b' # Amarelo/Laranja como na imagem
@@ -651,18 +651,90 @@ else:
         
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # TAB 7: SKUS
+    # TAB 7: SKUS (NOVO LAYOUT)
     with tab7:
-        st.subheader("📊 Análise de SKUs com Maior Risco")
-        col1, col2 = st.columns(2)
-        with col1:
-            janela_skus = st.slider("Período (dias)", 30, 180, 180, key="skus_janela")
-        with col2:
-            top_n = st.slider("Top N SKUs", 5, 20, 10, key="skus_top")
+        # Obter todos os SKUs com devolução
+        df_skus_all, total_dev_skus = analisar_skus(data['vendas'], data['matriz'], data['full'], data['max_date'], 180)
         
-        df_skus = analisar_skus(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_skus, top_n)
-        if len(df_skus) > 0:
-            st.dataframe(df_skus, use_container_width=True, hide_index=True)
+        # Calcular concentrações
+        total_skus_com_dev = len(df_skus_all)
+        
+        if total_dev_skus > 0 and len(df_skus_all) > 0:
+            df_sorted_vol = df_skus_all.sort_values('Dev.', ascending=False)
+            top10_conc = (df_sorted_vol.head(10)['Dev.'].sum() / total_dev_skus * 100)
+            top20_conc = (df_sorted_vol.head(20)['Dev.'].sum() / total_dev_skus * 100)
+        else:
+            top10_conc = 0
+            top20_conc = 0
+        
+        # Cartões de concentração
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.markdown(f"""
+                <div class="metric-card" style="text-align: center;">
+                    <div class="metric-label">Top 10 concentração</div>
+                    <div class="metric-value" style="font-size: 2rem;">{top10_conc:.1f}%</div>
+                </div>
+            """, unsafe_allow_html=True)
+        with c2:
+            st.markdown(f"""
+                <div class="metric-card" style="text-align: center;">
+                    <div class="metric-label">Top 20 concentração</div>
+                    <div class="metric-value" style="font-size: 2rem;">{top20_conc:.1f}%</div>
+                </div>
+            """, unsafe_allow_html=True)
+        with c3:
+            st.markdown(f"""
+                <div class="metric-card" style="text-align: center;">
+                    <div class="metric-label">SKUs com devolução</div>
+                    <div class="metric-value" style="font-size: 2rem;">{total_skus_com_dev}</div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Sub-abas de filtro
+        if len(df_skus_all) > 0:
+            sub_tab1, sub_tab2, sub_tab3, sub_tab4, sub_tab5 = st.tabs([
+                "Top Volume", "Top Taxa (≥20)", "Top Perda", "Top Risco", "Todos"
+            ])
+            
+            # Formatar colunas para exibição
+            def formatar_df_skus(df):
+                df_display = df.copy()
+                df_display['Taxa'] = df_display['Taxa'].apply(lambda x: f"{x:.1f}%")
+                df_display['Impacto'] = df_display['Impacto'].apply(lambda x: formatar_brl(x))
+                df_display['Reemb.'] = df_display['Reemb.'].apply(lambda x: formatar_brl(x))
+                df_display['Custo Dev.'] = df_display['Custo Dev.'].apply(lambda x: formatar_brl(x))
+                df_display['Risco'] = df_display['Risco'].apply(lambda x: f"{x:,.3f}")
+                return df_display[['SKU', 'Vendas', 'Dev.', 'Taxa', 'Impacto', 'Reemb.', 'Custo Dev.', 'Risco', 'Classe']]
+            
+            with sub_tab1:
+                # Top Volume: ordenar por número de devoluções
+                df_vol = df_skus_all.sort_values('Dev.', ascending=False).head(20)
+                st.dataframe(formatar_df_skus(df_vol), use_container_width=True, hide_index=True)
+            
+            with sub_tab2:
+                # Top Taxa: SKUs com taxa >= 20% e pelo menos 5 vendas
+                df_taxa = df_skus_all[(df_skus_all['Taxa'] >= 20) & (df_skus_all['Vendas'] >= 5)].sort_values('Taxa', ascending=False)
+                if len(df_taxa) > 0:
+                    st.dataframe(formatar_df_skus(df_taxa), use_container_width=True, hide_index=True)
+                else:
+                    st.info("Nenhum SKU com taxa ≥ 20% e pelo menos 5 vendas")
+            
+            with sub_tab3:
+                # Top Perda: ordenar por impacto financeiro
+                df_perda = df_skus_all.sort_values('Impacto', ascending=True).head(20)
+                st.dataframe(formatar_df_skus(df_perda), use_container_width=True, hide_index=True)
+            
+            with sub_tab4:
+                # Top Risco: ordenar por score de risco
+                df_risco = df_skus_all.sort_values('Risco', ascending=False).head(20)
+                st.dataframe(formatar_df_skus(df_risco), use_container_width=True, hide_index=True)
+            
+            with sub_tab5:
+                # Todos os SKUs
+                st.dataframe(formatar_df_skus(df_skus_all), use_container_width=True, hide_index=True)
         else:
             st.info("Sem dados disponíveis")
 
