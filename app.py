@@ -116,6 +116,11 @@ st.markdown("""
         flex: 1;
         border-radius: 0 4px 4px 0;
     }
+    
+    /* Esconder slider padrao */
+    [data-testid="stSlider"] {
+        display: none !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -439,7 +444,9 @@ else:
                 'Perda Total': formatar_brl(row['Perda_Total']),
                 'Perda Parcial': formatar_brl(row['Perda_Parcial']),
                 'Saud.': row['Saudaveis'],
+                'Imp. Saud.': formatar_brl(0),
                 'Crit.': row['Criticas'],
+                'Imp. Crit.': formatar_brl(0),
             })
         
         df_tabela = pd.DataFrame(tabela_data)
@@ -574,60 +581,16 @@ else:
         
         if len(df_motivos) > 0:
             df_motivos_sorted = df_motivos.sort_values('Quantidade', ascending=True)
-            # Definir cores estratégicas por tipo de motivo
-            cores = []
-            for motivo in df_motivos_sorted['Motivo']:
-                motivo_lower = motivo.lower()
-                if 'defeito' in motivo_lower or 'nao funciona' in motivo_lower or 'incompleto' in motivo_lower:
-                    cores.append('#ef4444')  # Vermelho
-                elif 'fisica' in motivo_lower or 'devolvi' in motivo_lower:
-                    cores.append('#f97316')  # Laranja
-                elif 'cancelado' in motivo_lower:
-                    cores.append('#eab308')  # Amarelo
-                elif 'reembolso' in motivo_lower:
-                    cores.append('#3b82f6')  # Azul
-                elif 'mediacao' in motivo_lower:
-                    cores.append('#8b5cf6')  # Purpura
-                else:
-                    cores.append('#6b7280')  # Cinza
-            
-            # Calcular altura dinamica - mais compacta
-            altura_minima = 350
-            altura_por_item = 30
-            altura_total = max(altura_minima, len(df_motivos_sorted) * altura_por_item)
-            
-            # Criar figura com rotulos melhorados
             fig = go.Figure(go.Bar(
-                x=df_motivos_sorted['Quantidade'], 
-                y=df_motivos_sorted['Motivo'],
-                orientation='h', 
-                marker=dict(color=cores, line=dict(color='#ffffff', width=0.5)),
-                text=[f"{int(q)} ({p:.1f}%)" for q, p in zip(df_motivos_sorted['Quantidade'], df_motivos_sorted['Percentual (%)'])],
-                textposition='outside',
-                hovertemplate='<b>%{y}</b><br>Quantidade: %{x}<extra></extra>'
+                x=df_motivos_sorted['Quantidade'], y=df_motivos_sorted['Motivo'],
+                orientation='h', marker_color='#f59e0b',
+                text=df_motivos_sorted['Quantidade'], textposition='outside'
             ))
-            
             fig.update_layout(
                 title='',
-                xaxis=dict(
-                    title='Quantidade',
-                    showgrid=True,
-                    gridcolor='#e5e7eb',
-                    zeroline=False
-                ),
-                yaxis=dict(
-                    title='',
-                    tickfont=dict(size=10)
-                ),
-                height=altura_total,
-                margin=dict(l=280, r=80, t=20, b=50),
-                plot_bgcolor='#ffffff',
-                paper_bgcolor='#ffffff',
-                font=dict(family='Arial, sans-serif', size=10, color='#1a1d23'),
-                hovermode='closest',
-                showlegend=False
+                xaxis=dict(title='Quantidade', showgrid=True, gridcolor='#e5e7eb'),
+                yaxis=dict(title=''), height=400, margin=dict(l=250, r=50)
             )
-
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Sem dados disponíveis")
@@ -807,14 +770,13 @@ else:
         impacto_total = abs(metricas_sim['impacto_devolucao'])
         perda_media = (impacto_total / total_dev) if total_dev > 0 else 0
         
-        # Título principal
         st.markdown("<h3 style='margin-bottom: 20px;'>Simulador de Redução de Devoluções</h3>", unsafe_allow_html=True)
         
-        # Slider com porcentagem (escondido, apenas para lógica)
+        # Slider com porcentagem (será escondido visualmente)
         max_slider = int(taxa_atual) if taxa_atual > 0 else 10
-        reducao_pct = st.slider("Redução desejada (%)", 0, max_slider, min(1, max_slider), key="sim_reducao_pct", label_visibility="collapsed")
+        reducao_pct = st.slider("Redução desejada (%)", 0, max_slider, min(1, max_slider), key="sim_reducao_pct")
         
-        # Exibir taxa atual e barra visual unificada
+        # Barra visual que reflete o valor do slider
         progress_width = min(reducao_pct, 100)
         st.markdown(f"""
             <div class="simulator-container">
@@ -834,7 +796,6 @@ else:
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Cards de resultados
         c1, c2, c3 = st.columns(3)
         with c1:
             render_metric_card("DEVOLUÇÕES SIMULADAS", formatar_numero(dev_evitadas), f"Antes: {formatar_numero(int(total_dev))}", "📦")
