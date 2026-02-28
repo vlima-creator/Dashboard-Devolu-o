@@ -108,11 +108,20 @@ def calcular_metricas(vendas, matriz, full, max_date, dias_atras):
                         reembolso_fallback = 0.0
                     reembolso = float(reembolso_fallback)
                 
-                # Custo de envio da devolução (perda parcial real)
-                custo_envio = dev.get('Custos de envio (BRL)', None)
-                if custo_envio is None or pd.isna(custo_envio):
-                    custo_envio = 0.0
-                custo_envio = float(custo_envio)
+                # Perda Parcial = Tarifas de envio + Tarifa de venda e impostos
+                # (você recupera o produto mas perde os custos)
+                tarifas_envio = dev.get('Tarifas de envio (BRL)', 0)
+                if pd.isna(tarifas_envio):
+                    tarifas_envio = 0.0
+                tarifas_envio = float(tarifas_envio)
+                
+                tarifa_venda = dev.get('Tarifa de venda e impostos (BRL)', 0)
+                if pd.isna(tarifa_venda):
+                    tarifa_venda = 0.0
+                tarifa_venda = float(tarifa_venda)
+                
+                # Perda parcial é a soma dos custos (já vêm negativos)
+                perda_parcial_item = tarifas_envio + tarifa_venda
                 
                 # Classificação
                 classe = classificar_estado(dev.get('Estado'))
@@ -125,7 +134,7 @@ def calcular_metricas(vendas, matriz, full, max_date, dias_atras):
                 
                 impacto_devolucao += reembolso
                 perda_total += reembolso
-                perda_parcial += custo_envio
+                perda_parcial += perda_parcial_item
     
     # Contagem de devoluções = número de vendas que tiveram devolução
     devolucoes_count = len(venda_com_devolucao)
