@@ -405,9 +405,7 @@ else:
                 'Perda Total': formatar_brl(row['Perda_Total']),
                 'Perda Parcial': formatar_brl(row['Perda_Parcial']),
                 'Saud.': row['Saudaveis'],
-                'Imp. Saud.': formatar_brl(0),
                 'Crit.': row['Criticas'],
-                'Imp. Crit.': formatar_brl(0),
             })
         
         df_tabela = pd.DataFrame(tabela_data)
