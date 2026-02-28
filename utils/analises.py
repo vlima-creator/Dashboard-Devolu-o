@@ -71,7 +71,7 @@ def analisar_frete(vendas, matriz, full, max_date, dias_atras):
     
     return pd.DataFrame(frete_data) if frete_data else pd.DataFrame()
 
-def analisar_motivos(vendas, matriz, full, max_date, dias_atras):
+def analisar_motivos(vendas=None, matriz=None, full=None, max_date=None, dias_atras=0):
     """
     Análise de motivos de devolução cruzando com dados de vendas.
     """
