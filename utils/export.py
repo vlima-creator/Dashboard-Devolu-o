@@ -3,17 +3,15 @@ from io import BytesIO
 from utils.metricas import calcular_metricas, calcular_qualidade_arquivo
 
 def exportar_xlsx(data):
-    """Exporta os resultados para um arquivo XLSX"""
+    """Exporta os resultados para um arquivo XLSX corrigido"""
     
     vendas = data['vendas']
     matriz = data['matriz']
     full = data['full']
     max_date = data['max_date']
     
-    if matriz is None:
-        matriz = pd.DataFrame()
-    if full is None:
-        full = pd.DataFrame()
+    if matriz is None: matriz = pd.DataFrame()
+    if full is None: full = pd.DataFrame()
     
     # Criar writer
     output = BytesIO()
@@ -21,7 +19,6 @@ def exportar_xlsx(data):
     
     # Aba 1: Resumo
     metricas_180 = calcular_metricas(vendas, matriz, full, max_date, 180)
-    qualidade = calcular_qualidade_arquivo(data)
     
     resumo_data = {
         'Métrica': [
@@ -50,10 +47,10 @@ def exportar_xlsx(data):
         ]
     }
     
-    df_resumo = pd.DataFrame(resumo_data)
-    df_resumo.to_excel(writer, sheet_name='Resumo', index=False)
+    pd.DataFrame(resumo_data).to_excel(writer, sheet_name='Resumo', index=False)
     
-    # Aba 2: Qualidade
+    # Aba 2: Qualidade (Corrigida para evitar KeyError)
+    qualidade = calcular_qualidade_arquivo(data)
     qualidade_data = {
         'Métrica': [
             'SKU sem informação (%)',
@@ -63,7 +60,6 @@ def exportar_xlsx(data):
             'Devoluções Matriz - Sem estado (%)',
             'Devoluções Full - Sem motivo (%)',
             'Devoluções Full - Sem estado (%)',
-            'Custo logístico ausente',
         ],
         'Valor': [
             f"{qualidade['vendas']['sem_sku_pct']:.2f}",
@@ -73,12 +69,10 @@ def exportar_xlsx(data):
             f"{qualidade['matriz']['sem_estado_pct']:.2f}",
             f"{qualidade['full']['sem_motivo_pct']:.2f}",
             f"{qualidade['full']['sem_estado_pct']:.2f}",
-            'Sim' if qualidade['custo_logistico_ausente'] else 'Não',
         ]
     }
     
-    df_qualidade = pd.DataFrame(qualidade_data)
-    df_qualidade.to_excel(writer, sheet_name='Qualidade', index=False)
+    pd.DataFrame(qualidade_data).to_excel(writer, sheet_name='Qualidade', index=False)
     
     # Aba 3: Janelas
     janelas_data = []
@@ -93,32 +87,12 @@ def exportar_xlsx(data):
             'Perda Total (R$)': f"{m['perda_total']:.2f}",
         })
     
-    df_janelas = pd.DataFrame(janelas_data)
-    df_janelas.to_excel(writer, sheet_name='Janelas', index=False)
+    pd.DataFrame(janelas_data).to_excel(writer, sheet_name='Janelas', index=False)
     
-    # Aba 4: Matriz vs Full
-    matriz_full_data = {
-        'Canal': ['Matriz', 'Full'],
-        'Devoluções': [len(matriz), len(full)],
-        'Percentual (%)': [
-            f"{(len(matriz) / (len(matriz) + len(full)) * 100):.2f}" if (len(matriz) + len(full)) > 0 else "0.00",
-            f"{(len(full) / (len(matriz) + len(full)) * 100):.2f}" if (len(matriz) + len(full)) > 0 else "0.00",
-        ]
-    }
-    
-    df_matriz = pd.DataFrame(matriz_full_data)
-    df_matriz.to_excel(writer, sheet_name='Matriz_Full', index=False)
-    
-    # Aba 5: Dados Brutos Vendas
-    df_vendas_export = vendas.head(1000).copy()
-    df_vendas_export.to_excel(writer, sheet_name='Vendas_Brutos', index=False)
-    
-    # Aba 6: Dados Brutos Devoluções
-    todas_dev = pd.concat([matriz, full], ignore_index=True)
-    df_dev_export = todas_dev.head(1000).copy()
-    df_dev_export.to_excel(writer, sheet_name='Devolucoes_Brutos', index=False)
+    # Aba 4: Dados Brutos (limitados para performance)
+    vendas.head(1000).to_excel(writer, sheet_name='Vendas_Brutos', index=False)
+    pd.concat([matriz, full], ignore_index=True).head(1000).to_excel(writer, sheet_name='Devolucoes_Brutos', index=False)
     
     writer.close()
     output.seek(0)
-    
     return output
