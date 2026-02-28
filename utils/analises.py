@@ -114,18 +114,36 @@ def analisar_motivos(vendas=None, matriz=None, full=None, max_date=None, dias_at
             # Prioridade 1: Motivos de cancelamento explícitos no relatório de vendas
             if 'estoque' in status_venda or 'estoque' in estado_venda:
                 return 'Cancelado: Falta de Estoque'
-            if 'arrependeu' in status_venda or 'arrependimento' in status_venda:
+            if 'arrependeu' in status_venda or 'arrependimento' in status_venda or 'se arrependeu' in status_dev:
                 return 'Cancelado: Arrependimento do Comprador'
             if 'você cancelou' in estado_venda:
                 return 'Cancelado pelo Vendedor'
             if 'cancelada pelo comprador' in estado_venda:
                 return 'Cancelado pelo Comprador'
             
-            # Prioridade 2: Lógica baseada no estado da devolução/venda
+            # Prioridade 2: Detalhamento de problemas técnicos/logísticos
+            if 'não funciona' in status_dev or 'defeito' in status_dev:
+                return 'Produto com Defeito / Não funciona'
+            if 'incompleto' in status_dev or 'faltando' in status_dev:
+                return 'Produto Incompleto / Faltando Peças'
+            if 'embalagem estava em ordem mas o produto não funciona' in status_dev:
+                return 'Produto com Defeito (Embalagem OK)'
+            if 'atraso' in status_venda or 'atraso' in status_dev:
+                return 'Atraso na Entrega / Logística'
+            
+            # Prioridade 3: Lógica baseada no estado da devolução/venda
             if 'te demos o dinheiro' in estado_dev or 'te demos o dinheiro' in status_dev or 'te demos o dinheiro' in status_venda:
                 return 'Reembolso ao Vendedor (Proteção)'
+            
+            # Se houve tarifa de envio negativa, é uma devolução física
+            tarifa_envio = row.get('Tarifas de envio (BRL)', 0)
+            if pd.notna(tarifa_envio) and tarifa_envio < 0:
+                if 'reembolso' in estado_dev or 'reembolsamos' in status_dev:
+                    return 'Devolução Física com Reembolso'
+                return 'Devolução Física em Processo'
+
             if 'reembolso' in estado_dev or 'reembolsamos' in status_dev or 'reembolso' in estado_venda:
-                return 'Reembolso ao Comprador'
+                return 'Reembolso Direto ao Comprador'
             if 'mediação' in estado_dev or 'mediação' in status_dev or 'mediação' in status_venda:
                 return 'Finalizado via Mediação'
             if 'não entregue' in estado_dev or 'não foi feita' in estado_dev:
