@@ -561,15 +561,95 @@ else:
         
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # TAB 6: ADS
+    # TAB 6: ADS (NOVO LAYOUT)
     with tab6:
-        st.subheader("📢 Análise de Vendas por Publicidade")
         janela_ads = st.slider("Período (dias)", 30, 180, 180, key="ads_janela")
         df_ads = analisar_ads(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_ads)
+        
+        # Extrair dados de Ads e Orgânico
+        ads_vendas = 0
+        ads_dev = 0
+        ads_taxa = 0.0
+        ads_impacto = 0.0
+        ads_fat = 0.0
+        org_vendas = 0
+        org_dev = 0
+        org_taxa = 0.0
+        
         if len(df_ads) > 0:
-            st.dataframe(df_ads, use_container_width=True, hide_index=True)
-        else:
-            st.info("Sem dados disponíveis")
+            for _, row in df_ads.iterrows():
+                if 'Com Publicidade' in str(row.get('Tipo', '')):
+                    ads_vendas = int(row.get('Vendas', 0))
+                    ads_dev = int(row.get('Devoluções', 0))
+                    ads_taxa = float(row.get('Taxa (%)', 0))
+                    ads_impacto = float(row.get('Impacto (R$)', 0))
+                    ads_fat = float(row.get('Receita (R$)', 0))
+                elif 'Sem Publicidade' in str(row.get('Tipo', '')):
+                    org_vendas = int(row.get('Vendas', 0))
+                    org_dev = int(row.get('Devoluções', 0))
+                    org_taxa = float(row.get('Taxa (%)', 0))
+        
+        # Linha de Cartões (5 cartões como na imagem)
+        c1, c2, c3, c4, c5 = st.columns(5)
+        
+        with c1:
+            render_metric_card("VENDAS ADS", formatar_numero(ads_vendas), "", "📣")
+        with c2:
+            render_metric_card("DEV. ADS", formatar_numero(ads_dev), "", "📉")
+        with c3:
+            render_metric_card("TAXA ADS", f"{ads_taxa:.1f}%", "", "🎯")
+        with c4:
+            render_metric_card("IMPACTO ADS", formatar_brl(ads_impacto), "", "📉")
+        with c5:
+            render_metric_card("FAT. ADS", formatar_brl(ads_fat), "", "💲")
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Painel Comparativo Ads vs Orgânico
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-title">Ads vs Orgânico</div>', unsafe_allow_html=True)
+        
+        col_pub, col_org = st.columns(2)
+        
+        with col_pub:
+            st.markdown(f"""
+                <div style="padding: 10px 0;">
+                    <div style="color: #3b82f6; font-size: 1rem; font-weight: 700; margin-bottom: 15px;">Publicidade</div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                        <span style="color: #1a1d23; font-weight: 500;">Vendas</span>
+                        <span style="color: #1a1d23; font-weight: 600;">{formatar_numero(ads_vendas)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                        <span style="color: #1a1d23; font-weight: 500;">Devoluções</span>
+                        <span style="color: #1a1d23; font-weight: 600;">{formatar_numero(ads_dev)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                        <span style="color: #1a1d23; font-weight: 500;">Taxa</span>
+                        <span style="color: #1a1d23; font-weight: 600;">{ads_taxa:.1f}%</span>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with col_org:
+            st.markdown(f"""
+                <div style="padding: 10px 0;">
+                    <div style="color: #3b82f6; font-size: 1rem; font-weight: 700; margin-bottom: 15px;">Orgânico</div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                        <span style="color: #1a1d23; font-weight: 500;">Vendas</span>
+                        <span style="color: #1a1d23; font-weight: 600;">{formatar_numero(org_vendas)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                        <span style="color: #1a1d23; font-weight: 500;">Devoluções</span>
+                        <span style="color: #1a1d23; font-weight: 600;">{formatar_numero(org_dev)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                        <span style="color: #1a1d23; font-weight: 500;">Taxa</span>
+                        <span style="color: #1a1d23; font-weight: 600;">{org_taxa:.1f}%</span>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # TAB 7: SKUS
     with tab7:
