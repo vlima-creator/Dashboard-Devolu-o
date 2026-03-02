@@ -73,7 +73,7 @@ st.markdown("""
         margin-bottom: 20px;
     }
     
-    /* Estilo do Cabeçalho de Filtros */
+    /* Estilo do Cabecalho de Filtros */
     .filter-header {
         background-color: white;
         padding: 15px 25px;
@@ -83,8 +83,8 @@ st.markdown("""
         margin-bottom: 20px;
     }
     
-    /* Estilo do Simulador com Barra Interativa */
-    .simulator-container {
+    /* Estilo do Simulador */
+    .simulator-box {
         background-color: white;
         padding: 20px;
         border-radius: 10px;
@@ -93,14 +93,13 @@ st.markdown("""
         margin-bottom: 20px;
     }
     
-    .simulator-bar {
+    .simulator-bar-container {
         display: flex;
         gap: 0;
-        margin-bottom: 20px;
-        cursor: pointer;
+        height: 24px;
         border-radius: 4px;
         overflow: hidden;
-        height: 24px;
+        margin-bottom: 20px;
     }
     
     .simulator-bar-yellow {
@@ -115,36 +114,6 @@ st.markdown("""
         height: 100%;
         flex: 1;
         border-radius: 0 4px 4px 0;
-    }
-    
-    /* Tornar o slider invisível mas funcional */
-    [data-testid="stSlider"] {
-        margin: 0 !important;
-        padding: 0 !important;
-        height: 0 !important;
-        min-height: 0 !important;
-    }
-    
-    [data-testid="stSlider"] > div {
-        height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    
-    [data-testid="stSlider"] input[type="range"] {
-        width: 100% !important;
-        height: 24px !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        cursor: pointer !important;
-        opacity: 0 !important;
-        position: relative !important;
-        z-index: 10 !important;
-        pointer-events: auto !important;
-    }
-    
-    [data-testid="stSlider"] label {
-        display: none !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -795,25 +764,22 @@ else:
         impacto_total = abs(metricas_sim['impacto_devolucao'])
         perda_media = (impacto_total / total_dev) if total_dev > 0 else 0
         
-        st.markdown("<h3 style='margin-bottom: 20px;'>Simulador de Reduu00e7u00e3o de Devoluu00e7u00f5es</h3>", unsafe_allow_html=True)
+        st.markdown('<div class="simulator-box">', unsafe_allow_html=True)
+        st.markdown('<h4 style="margin-top: 0; margin-bottom: 15px;">Simulador de Reducao de Devolucoes</h4>', unsafe_allow_html=True)
         
         max_slider = int(taxa_atual) if taxa_atual > 0 else 10
+        reducao_pct = st.slider("Reducao desejada (%)", 0, max_slider, min(1, max_slider), key="sim_reducao_pct")
         
-        # Slider com porcentagem (escondido via CSS, mas funcional)
-        reducao_pct = st.slider("Reduu00e7u00e3o desejada (%)", 0, max_slider, min(1, max_slider), key="sim_reducao_pct", label_visibility="collapsed")
-        
-        # Container com barra visual
         progress_width = min(reducao_pct, 100)
         st.markdown(f"""
-            <div class="simulator-container">
-                <p style='color: #6e7787; font-size: 0.9rem; margin-bottom: 10px;'>Reduu00e7u00e3o simulada: <strong style='color: #1a1d23; font-size: 1.1rem;'>{reducao_pct}%</strong></p>
-                <div class="simulator-bar">
-                    <div class="simulator-bar-yellow" style="width: {progress_width}%;"></div>
-                    <div class="simulator-bar-dark"></div>
-                </div>
+            <p style="color: #6e7787; font-size: 0.9rem; margin-bottom: 10px;">Reducao simulada: <strong style="color: #1a1d23; font-size: 1.1rem;">{reducao_pct}%</strong></p>
+            <div class="simulator-bar-container">
+                <div class="simulator-bar-yellow" style="width: {progress_width}%;"></div>
+                <div class="simulator-bar-dark"></div>
             </div>
-        """, unsafe_allow_html=True)    
-        # Cálculos baseados em porcentagem
+        """, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
         nova_taxa = max(taxa_atual - reducao_pct, 0)
         vendas_totais = metricas_sim['vendas']
         dev_evitadas = int((reducao_pct / 100) * vendas_totais) if vendas_totais > 0 else 0
@@ -823,11 +789,11 @@ else:
         
         c1, c2, c3 = st.columns(3)
         with c1:
-            render_metric_card("DEVOLUÇÕES SIMULADAS", formatar_numero(dev_evitadas), f"Antes: {formatar_numero(int(total_dev))}", "📦")
+            render_metric_card("DEVOLUCOES SIMULADAS", formatar_numero(dev_evitadas), f"Antes: {formatar_numero(int(total_dev))}", "📦")
         with c2:
             render_metric_card("PERDA SIMULADA", formatar_brl(dinheiro_recuperado), f"Antes: {formatar_brl(impacto_total)}", "💰")
         with c3:
-            render_metric_card("ECONOMIA ESTIMADA", formatar_brl(dinheiro_recuperado), "Redução de perda", "📈")
+            render_metric_card("ECONOMIA ESTIMADA", formatar_brl(dinheiro_recuperado), "Reducao de perda", "📈")
     
     # ─── EXPORT ───
     st.markdown("---")
