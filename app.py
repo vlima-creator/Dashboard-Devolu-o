@@ -769,15 +769,6 @@ else:
         
         max_slider = int(taxa_atual) if taxa_atual > 0 else 10
         reducao_pct = st.slider("Reducao desejada (%)", 0, max_slider, min(1, max_slider), key="sim_reducao_pct")
-        
-        progress_width = min(reducao_pct, 100)
-        st.markdown(f"""
-            <p style="color: #6e7787; font-size: 0.9rem; margin-bottom: 10px;">Reducao simulada: <strong style="color: #1a1d23; font-size: 1.1rem;">{reducao_pct}%</strong></p>
-            <div class="simulator-bar-container">
-                <div class="simulator-bar-yellow" style="width: {progress_width}%;"></div>
-                <div class="simulator-bar-dark"></div>
-            </div>
-        """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
         nova_taxa = max(taxa_atual - reducao_pct, 0)
