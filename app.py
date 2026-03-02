@@ -117,34 +117,34 @@ st.markdown("""
         border-radius: 0 4px 4px 0;
     }
     
-    /* Sobrepor slider transparente na barra visual */
-    .simulator-container [data-testid="stSlider"] {
-        position: absolute !important;
-        top: 30px !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 24px !important;
+    /* Tornar o slider invisível mas funcional */
+    [data-testid="stSlider"] {
         margin: 0 !important;
         padding: 0 !important;
-        z-index: 100 !important;
-        opacity: 0 !important;
-        pointer-events: auto !important;
-        background: transparent !important;
+        height: 0 !important;
+        min-height: 0 !important;
     }
     
-    .simulator-container [data-testid="stSlider"] > div {
-        height: 24px !important;
+    [data-testid="stSlider"] > div {
+        height: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
     }
     
-    .simulator-container [data-testid="stSlider"] input[type="range"] {
+    [data-testid="stSlider"] input[type="range"] {
         width: 100% !important;
         height: 24px !important;
+        margin: 0 !important;
+        padding: 0 !important;
         cursor: pointer !important;
         opacity: 0 !important;
-        z-index: 100 !important;
+        position: relative !important;
+        z-index: 10 !important;
         pointer-events: auto !important;
+    }
+    
+    [data-testid="stSlider"] label {
+        display: none !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -795,27 +795,24 @@ else:
         impacto_total = abs(metricas_sim['impacto_devolucao'])
         perda_media = (impacto_total / total_dev) if total_dev > 0 else 0
         
-        st.markdown("<h3 style='margin-bottom: 20px;'>Simulador de Redução de Devoluções</h3>", unsafe_allow_html=True)
-        
-        # Container do simulador
-        st.markdown('<div class="simulator-container" style="position: relative;">', unsafe_allow_html=True)
+        st.markdown("<h3 style='margin-bottom: 20px;'>Simulador de Reduu00e7u00e3o de Devoluu00e7u00f5es</h3>", unsafe_allow_html=True)
         
         max_slider = int(taxa_atual) if taxa_atual > 0 else 10
         
-        # Slider com porcentagem (será sobreposto na barra)
-        reducao_pct = st.slider("Redução desejada (%)", 0, max_slider, min(1, max_slider), key="sim_reducao_pct", label_visibility="collapsed")
+        # Slider com porcentagem (escondido via CSS, mas funcional)
+        reducao_pct = st.slider("Reduu00e7u00e3o desejada (%)", 0, max_slider, min(1, max_slider), key="sim_reducao_pct", label_visibility="collapsed")
         
-        # Barra visual que reflete o valor do slider
+        # Container com barra visual
         progress_width = min(reducao_pct, 100)
         st.markdown(f"""
-                <p style='color: #6e7787; font-size: 0.9rem; margin-bottom: 10px; margin-top: -50px;'>Redução simulada: <strong style='color: #1a1d23; font-size: 1.1rem;'>{reducao_pct}%</strong></p>
+            <div class="simulator-container">
+                <p style='color: #6e7787; font-size: 0.9rem; margin-bottom: 10px;'>Reduu00e7u00e3o simulada: <strong style='color: #1a1d23; font-size: 1.1rem;'>{reducao_pct}%</strong></p>
                 <div class="simulator-bar">
                     <div class="simulator-bar-yellow" style="width: {progress_width}%;"></div>
                     <div class="simulator-bar-dark"></div>
                 </div>
             </div>
-        """, unsafe_allow_html=True)
-        
+        """, unsafe_allow_html=True)    
         # Cálculos baseados em porcentagem
         nova_taxa = max(taxa_atual - reducao_pct, 0)
         vendas_totais = metricas_sim['vendas']
