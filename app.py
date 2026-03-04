@@ -30,6 +30,12 @@ st.markdown("""
         flex: 1;
         position: relative;
         min-height: 100px;
+        transition: all 0.3s ease;
+    }
+    .metric-card:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+        transform: translateY(-2px);
     }
     .metric-label {
         color: #94a3b8;
@@ -65,6 +71,11 @@ st.markdown("""
         border: 1px solid #334155;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+    .chart-container:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
     }
     .chart-title {
         color: #f8fafc;
@@ -81,6 +92,11 @@ st.markdown("""
         border: 1px solid #334155;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+    .filter-header:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
     }
     
     /* Estilo do Simulador */
@@ -91,6 +107,11 @@ st.markdown("""
         border: 1px solid #334155;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+    .simulator-box:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
     }
     
     .simulator-bar-container {
