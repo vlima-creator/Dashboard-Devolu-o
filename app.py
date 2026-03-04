@@ -139,7 +139,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
     </style>
-""", unsafe_allow_html=True)},{all:false,find:
+""", unsafe_allow_html=True)
 
 def render_metric_card(label, value, subvalue, icon):
     st.markdown(f"""
