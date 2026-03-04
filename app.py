@@ -22,29 +22,29 @@ st.markdown("""
     <style>
     /* Estilo dos Cartões de Métricas */
     .metric-card {
-        background-color: white;
+        background-color: #1e293b;
         padding: 15px;
         border-radius: 10px;
-        border: 1px solid #e6e9ef;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border: 1px solid #334155;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         flex: 1;
         position: relative;
         min-height: 100px;
     }
     .metric-label {
-        color: #6e7787;
+        color: #94a3b8;
         font-size: 0.8rem;
         font-weight: 600;
         text-transform: uppercase;
         margin-bottom: 5px;
     }
     .metric-value {
-        color: #1a1d23;
+        color: #f8fafc;
         font-size: 1.5rem;
         font-weight: 700;
     }
     .metric-subvalue {
-        color: #9ba3af;
+        color: #64748b;
         font-size: 0.75rem;
         margin-top: 2px;
     }
@@ -54,20 +54,20 @@ st.markdown("""
         top: 50%;
         transform: translateY(-50%);
         font-size: 1.8rem;
-        color: #d1d5db;
+        color: #475569;
     }
     
     /* Estilo das Seções de Gráficos */
     .chart-container {
-        background-color: white;
+        background-color: #1e293b;
         padding: 20px;
         border-radius: 10px;
-        border: 1px solid #e6e9ef;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border: 1px solid #334155;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         margin-bottom: 20px;
     }
     .chart-title {
-        color: #1a1d23;
+        color: #f8fafc;
         font-size: 1rem;
         font-weight: 700;
         margin-bottom: 20px;
@@ -75,21 +75,21 @@ st.markdown("""
     
     /* Estilo do Cabecalho de Filtros */
     .filter-header {
-        background-color: white;
+        background-color: #1e293b;
         padding: 15px 25px;
         border-radius: 10px;
-        border: 1px solid #e6e9ef;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border: 1px solid #334155;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         margin-bottom: 20px;
     }
     
     /* Estilo do Simulador */
     .simulator-box {
-        background-color: white;
+        background-color: #1e293b;
         padding: 20px;
         border-radius: 10px;
-        border: 1px solid #e6e9ef;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border: 1px solid #334155;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         margin-bottom: 20px;
     }
     
@@ -357,7 +357,7 @@ else:
                 ))
                 fig_bar.update_layout(
                     margin=dict(t=0, b=0, l=0, r=0), height=300,
-                    xaxis=dict(showgrid=True, gridcolor='#f3f4f6'),
+                    xaxis=dict(showgrid=True, gridcolor='#334155'),
                     yaxis=dict(showgrid=False)
                 )
                 st.plotly_chart(fig_bar, use_container_width=True)
@@ -412,9 +412,12 @@ else:
             line=dict(color='#ef4444', width=2), marker=dict(size=6), yaxis='y2'
         ))
         fig.update_layout(
+            template='plotly_dark',
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
             title='',
-            xaxis=dict(title='Período', showgrid=True, gridcolor='#e5e7eb'),
-            yaxis=dict(title='Vendas / Devoluções', showgrid=True, gridcolor='#e5e7eb', side='left'),
+            xaxis=dict(title='Período', showgrid=True, gridcolor='#334155'),
+            yaxis=dict(title='Vendas / Devoluções', showgrid=True, gridcolor='#334155', side='left'),
             yaxis2=dict(title='Taxa (%)', overlaying='y', side='right'),
             hovermode='x unified', height=400, margin=dict(r=80),
             legend=dict(x=0.01, y=0.99)
@@ -454,28 +457,28 @@ else:
         
         with col_matriz:
             st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-            st.markdown('<div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; color: #1a1d23;">Matriz</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; color: #f8fafc;">Matriz</div>', unsafe_allow_html=True)
             c1, c2 = st.columns(2)
             with c1:
                 st.markdown(f"""
-                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
-                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Devoluções</div>
-                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_numero(metricas_matriz['devolucoes_vendas'])}</div>
+                    <div style="padding: 15px; background-color: #334155; border-radius: 8px; text-align: center;">
+                        <div style="color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Devoluções</div>
+                        <div style="color: #f8fafc; font-size: 1.8rem; font-weight: 700;">{formatar_numero(metricas_matriz['devolucoes_vendas'])}</div>
                     </div>
                 """, unsafe_allow_html=True)
             with c2:
                 st.markdown(f"""
-                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
-                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Taxa</div>
-                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_percentual(metricas_matriz['taxa_devolucao'])}</div>
+                    <div style="padding: 15px; background-color: #334155; border-radius: 8px; text-align: center;">
+                        <div style="color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Taxa</div>
+                        <div style="color: #f8fafc; font-size: 1.8rem; font-weight: 700;">{formatar_percentual(metricas_matriz['taxa_devolucao'])}</div>
                     </div>
                 """, unsafe_allow_html=True)
             c1, c2 = st.columns(2)
             with c1:
                 st.markdown(f"""
-                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
-                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Impacto</div>
-                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_brl(metricas_matriz['impacto_devolucao'])}</div>
+                    <div style="padding: 15px; background-color: #334155; border-radius: 8px; text-align: center;">
+                        <div style="color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Impacto</div>
+                        <div style="color: #f8fafc; font-size: 1.8rem; font-weight: 700;">{formatar_brl(metricas_matriz['impacto_devolucao'])}</div>
                     </div>
                 """, unsafe_allow_html=True)
             with c2:
@@ -483,46 +486,46 @@ else:
                 df_skus_m, total_dev_m = analisar_skus(data['vendas'], data['matriz'], None, data['max_date'], janela_global)
                 top10_m = (df_skus_m.sort_values('Dev.', ascending=False).head(10)['Dev.'].sum() / total_dev_m * 100) if total_dev_m > 0 and len(df_skus_m) > 0 else 0
                 st.markdown(f"""
-                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
-                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Top 10 Conc.</div>
-                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_pct_direto(top10_m)}</div>
+                    <div style="padding: 15px; background-color: #334155; border-radius: 8px; text-align: center;">
+                        <div style="color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Top 10 Conc.</div>
+                        <div style="color: #f8fafc; font-size: 1.8rem; font-weight: 700;">{formatar_pct_direto(top10_m)}</div>
                     </div>
                 """, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
         
         with col_full:
             st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-            st.markdown('<div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; color: #1a1d23;">Full</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; color: #f8fafc;">Full</div>', unsafe_allow_html=True)
             c1, c2 = st.columns(2)
             with c1:
                 st.markdown(f"""
-                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
-                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Devoluções</div>
-                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_numero(metricas_full['devolucoes_vendas'])}</div>
+                    <div style="padding: 15px; background-color: #334155; border-radius: 8px; text-align: center;">
+                        <div style="color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Devoluções</div>
+                        <div style="color: #f8fafc; font-size: 1.8rem; font-weight: 700;">{formatar_numero(metricas_full['devolucoes_vendas'])}</div>
                     </div>
                 """, unsafe_allow_html=True)
             with c2:
                 st.markdown(f"""
-                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
-                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Taxa</div>
-                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_percentual(metricas_full['taxa_devolucao'])}</div>
+                    <div style="padding: 15px; background-color: #334155; border-radius: 8px; text-align: center;">
+                        <div style="color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Taxa</div>
+                        <div style="color: #f8fafc; font-size: 1.8rem; font-weight: 700;">{formatar_percentual(metricas_full['taxa_devolucao'])}</div>
                     </div>
                 """, unsafe_allow_html=True)
             c1, c2 = st.columns(2)
             with c1:
                 st.markdown(f"""
-                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
-                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Impacto</div>
-                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_brl(metricas_full['impacto_devolucao'])}</div>
+                    <div style="padding: 15px; background-color: #334155; border-radius: 8px; text-align: center;">
+                        <div style="color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Impacto</div>
+                        <div style="color: #f8fafc; font-size: 1.8rem; font-weight: 700;">{formatar_brl(metricas_full['impacto_devolucao'])}</div>
                     </div>
                 """, unsafe_allow_html=True)
             with c2:
                 df_skus_f, total_dev_f = analisar_skus(data['vendas'], None, data['full'], data['max_date'], janela_global)
                 top10_f = (df_skus_f.sort_values('Dev.', ascending=False).head(10)['Dev.'].sum() / total_dev_f * 100) if total_dev_f > 0 and len(df_skus_f) > 0 else 0
                 st.markdown(f"""
-                    <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; text-align: center;">
-                        <div style="color: #9ba3af; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Top 10 Conc.</div>
-                        <div style="color: #1a1d23; font-size: 1.8rem; font-weight: 700;">{formatar_pct_direto(top10_f)}</div>
+                    <div style="padding: 15px; background-color: #334155; border-radius: 8px; text-align: center;">
+                        <div style="color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">Top 10 Conc.</div>
+                        <div style="color: #f8fafc; font-size: 1.8rem; font-weight: 700;">{formatar_pct_direto(top10_f)}</div>
                     </div>
                 """, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -540,6 +543,9 @@ else:
         fig.add_trace(go.Bar(x=['Matriz', 'Full'], y=[total_matriz, total_full], name='Devoluções', marker_color='#3b82f6', yaxis='y1'))
         fig.add_trace(go.Bar(x=['Matriz', 'Full'], y=[impacto_matriz, impacto_full], name='Impacto (R$)', marker_color='#ef4444', yaxis='y2'))
         fig.update_layout(
+            template='plotly_dark',
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
             barmode='group', title='',
             xaxis=dict(title='Canal'),
             yaxis=dict(title='Devoluções', side='left'),
@@ -579,8 +585,11 @@ else:
                 text=df_motivos_sorted['Quantidade'], textposition='outside'
             ))
             fig.update_layout(
+                template='plotly_dark',
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
                 title='',
-                xaxis=dict(title='Quantidade', showgrid=True, gridcolor='#e5e7eb'),
+                xaxis=dict(title='Quantidade', showgrid=True, gridcolor='#334155'),
                 yaxis=dict(title=''), height=400, margin=dict(l=250, r=50)
             )
             st.plotly_chart(fig, use_container_width=True)
@@ -649,17 +658,17 @@ else:
             st.markdown(f"""
                 <div style="padding: 10px 0;">
                     <div style="color: #3b82f6; font-size: 1rem; font-weight: 700; margin-bottom: 15px;">Publicidade</div>
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
-                        <span style="color: #1a1d23; font-weight: 500;">Vendas</span>
-                        <span style="color: #1a1d23; font-weight: 600;">{formatar_numero(ads_vendas)}</span>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #475569;">
+                        <span style="color: #f8fafc; font-weight: 500;">Vendas</span>
+                        <span style="color: #f8fafc; font-weight: 600;">{formatar_numero(ads_vendas)}</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
-                        <span style="color: #1a1d23; font-weight: 500;">Devoluções</span>
-                        <span style="color: #1a1d23; font-weight: 600;">{formatar_numero(ads_dev)}</span>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #475569;">
+                        <span style="color: #f8fafc; font-weight: 500;">Devoluções</span>
+                        <span style="color: #f8fafc; font-weight: 600;">{formatar_numero(ads_dev)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                        <span style="color: #1a1d23; font-weight: 500;">Taxa</span>
-                        <span style="color: #1a1d23; font-weight: 600;">{formatar_pct_direto(ads_taxa)}</span>
+                        <span style="color: #f8fafc; font-weight: 500;">Taxa</span>
+                        <span style="color: #f8fafc; font-weight: 600;">{formatar_pct_direto(ads_taxa)}</span>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
@@ -667,17 +676,17 @@ else:
             st.markdown(f"""
                 <div style="padding: 10px 0;">
                     <div style="color: #3b82f6; font-size: 1rem; font-weight: 700; margin-bottom: 15px;">Orgânico</div>
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
-                        <span style="color: #1a1d23; font-weight: 500;">Vendas</span>
-                        <span style="color: #1a1d23; font-weight: 600;">{formatar_numero(org_vendas)}</span>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #475569;">
+                        <span style="color: #f8fafc; font-weight: 500;">Vendas</span>
+                        <span style="color: #f8fafc; font-weight: 600;">{formatar_numero(org_vendas)}</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
-                        <span style="color: #1a1d23; font-weight: 500;">Devoluções</span>
-                        <span style="color: #1a1d23; font-weight: 600;">{formatar_numero(org_dev)}</span>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #475569;">
+                        <span style="color: #f8fafc; font-weight: 500;">Devoluções</span>
+                        <span style="color: #f8fafc; font-weight: 600;">{formatar_numero(org_dev)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                        <span style="color: #1a1d23; font-weight: 500;">Taxa</span>
-                        <span style="color: #1a1d23; font-weight: 600;">{formatar_pct_direto(org_taxa)}</span>
+                        <span style="color: #f8fafc; font-weight: 500;">Taxa</span>
+                        <span style="color: #f8fafc; font-weight: 600;">{formatar_pct_direto(org_taxa)}</span>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
