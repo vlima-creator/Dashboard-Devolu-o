@@ -138,6 +138,36 @@ st.markdown("""
         border: 1px dashed #334155;
         margin-bottom: 15px;
     }
+
+    /* Estilização das Abas (Tabs) */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: transparent;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        height: 45px;
+        white-space: pre;
+        background-color: #1e293b;
+        border-radius: 8px 8px 0px 0px;
+        color: #94a3b8;
+        font-weight: 600;
+        padding: 10px 20px;
+        border: 1px solid #334155;
+        border-bottom: none;
+        transition: all 0.2s ease;
+    }
+
+    .stTabs [aria-selected="true"] {
+        background-color: #3b82f6 !important;
+        color: white !important;
+        border-color: #3b82f6 !important;
+    }
+
+    .stTabs [data-baseweb="tab"]:hover {
+        color: #f8fafc;
+        background-color: #334155;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -335,8 +365,8 @@ else:
     # ABAS
     # ─────────────────────────────────────────────────────
     tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
-        "📈 Resumo", "🎯 Janelas", "📦 Matriz/Full", "🚚 Frete", 
-        "🔍 Motivos", "📢 Ads", "📊 SKUs", "🎮 Simulador"
+        "Resumo", "Janelas", "Matriz/Full", "Frete", 
+        "Motivos", "Ads", "SKUs", "Simulador"
     ])
     
     # ─── TAB 1: RESUMO ───
