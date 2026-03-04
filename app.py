@@ -115,8 +115,31 @@ st.markdown("""
         flex: 1;
         border-radius: 0 4px 4px 0;
     }
+    
+    /* Ajustes para Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #0f172a;
+    }
+    [data-testid="stSidebar"] .stMarkdown h1, [data-testid="stSidebar"] .stMarkdown h2, [data-testid="stSidebar"] .stMarkdown h3 {
+        color: #f8fafc;
+    }
+    
+    /* Estilo para os botões da sidebar */
+    .stButton > button {
+        border-radius: 8px;
+        font-weight: 600;
+    }
+    
+    /* Estilo para o uploader na sidebar */
+    [data-testid="stSidebar"] .stFileUploader {
+        padding: 10px;
+        background-color: #1e293b;
+        border-radius: 10px;
+        border: 1px dashed #334155;
+        margin-bottom: 15px;
+    }
     </style>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=True)},{all:false,find:
 
 def render_metric_card(label, value, subvalue, icon):
     st.markdown(f"""
@@ -195,74 +218,86 @@ def aplicar_filtros(data, janela, canal, somente_ads, top10_skus):
 if 'processed_data' not in st.session_state:
     st.session_state.processed_data = None
 
-# Sidebar
-st.sidebar.title("📊 Menu")
-st.sidebar.markdown("---")
+# ─────────────────────────────────────────────────────────
+# SIDEBAR - UPLOAD E CONFIGURAÇÕES
+# ─────────────────────────────────────────────────────────
+with st.sidebar:
+    st.title("📊 Menu")
+    st.markdown("---")
+    
+    st.subheader("📁 Upload de Dados")
+    file_vendas = st.file_uploader("Relatório de Vendas", type=['xlsx'], key='vendas', help="Arraste o arquivo .xlsx de vendas do ML")
+    file_devolucoes = st.file_uploader("Relatório de Devoluções", type=['xlsx'], key='devolucoes', help="Arraste o arquivo .xlsx de devoluções do ML")
+    
+    col_btn1, col_btn2 = st.columns(2)
+    with col_btn1:
+        btn_processar = st.button("🚀 Processar", use_container_width=True, type="primary")
+    with col_btn2:
+        btn_exemplo = st.button("📋 Exemplo", use_container_width=True)
+        
+    if btn_processar:
+        if file_vendas and file_devolucoes:
+            with st.spinner("Processando..."):
+                try:
+                    data = processar_arquivos(file_vendas, file_devolucoes)
+                    st.session_state.processed_data = data
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Erro: {str(e)}")
+        else:
+            st.warning("Selecione os dois arquivos")
+            
+    if btn_exemplo:
+        with st.spinner("Carregando..."):
+            try:
+                import os
+                example_dir = "public/examples"
+                if os.path.exists(f"{example_dir}/vendas_exemplo.xlsx") and os.path.exists(f"{example_dir}/devolucoes_exemplo.xlsx"):
+                    with open(f"{example_dir}/vendas_exemplo.xlsx", 'rb') as f1:
+                        with open(f"{example_dir}/devolucoes_exemplo.xlsx", 'rb') as f2:
+                            data = processar_arquivos(f1, f2)
+                            st.session_state.processed_data = data
+                            st.rerun()
+                else:
+                    st.warning("Exemplos não encontrados")
+            except Exception as e:
+                st.error(f"Erro: {str(e)}")
+
+    if st.session_state.processed_data is not None:
+        st.markdown("---")
+        if st.button("🗑️ Limpar Dados", use_container_width=True):
+            st.session_state.processed_data = None
+            st.rerun()
 
 # ─────────────────────────────────────────────────────────
-# PÁGINA DE UPLOAD
+# CONTEÚDO PRINCIPAL
 # ─────────────────────────────────────────────────────────
 if st.session_state.processed_data is None:
     st.title("📊 Dashboard Vendas x Devoluções")
-    st.markdown("Análise automática de Vendas e Devoluções do Mercado Livre (BR)")
+    st.markdown("""
+    ### Bem-vindo! 
+    Para começar a análise, utilize a **barra lateral à esquerda** para carregar seus relatórios do Mercado Livre.
     
+    **Arquivos necessários:**
+    1.  **Relatório de Vendas** (.xlsx)
+    2.  **Relatório de Devoluções** (.xlsx)
+    
+    *Dica: Você também pode clicar em 'Exemplo' na barra lateral para visualizar como o dashboard funciona.*
+    """)
+    
+    # Ilustração ou cards informativos
     st.markdown("---")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("📁 Relatório de Vendas")
-        file_vendas = st.file_uploader("Selecione o arquivo de Vendas", type=['xlsx'], key='vendas')
-    with col2:
-        st.subheader("📁 Relatório de Devoluções")
-        file_devolucoes = st.file_uploader("Selecione o arquivo de Devoluções", type=['xlsx'], key='devolucoes')
-    
-    st.markdown("---")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🚀 Processar", use_container_width=True, type="primary"):
-            if file_vendas and file_devolucoes:
-                with st.spinner("Processando arquivos..."):
-                    try:
-                        data = processar_arquivos(file_vendas, file_devolucoes)
-                        st.session_state.processed_data = data
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Erro ao processar: {str(e)}")
-            else:
-                st.warning("Por favor, selecione ambos os arquivos")
-    
-    with col2:
-        if st.button("📋 Carregar Exemplo", use_container_width=True):
-            with st.spinner("Carregando exemplo..."):
-                try:
-                    import os
-                    example_dir = "public/examples"
-                    if os.path.exists(f"{example_dir}/vendas_exemplo.xlsx") and os.path.exists(f"{example_dir}/devolucoes_exemplo.xlsx"):
-                        with open(f"{example_dir}/vendas_exemplo.xlsx", 'rb') as f1:
-                            with open(f"{example_dir}/devolucoes_exemplo.xlsx", 'rb') as f2:
-                                data = processar_arquivos(f1, f2)
-                                st.session_state.processed_data = data
-                                st.rerun()
-                    else:
-                        st.warning("Arquivos de exemplo não encontrados")
-                except Exception as e:
-                    st.error(f"Erro ao carregar exemplo: {str(e)}")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.info("**Análise de Canais**\n\nCompare o desempenho entre Matriz e Full.")
+    with c2:
+        st.info("**Motivos de Devolução**\n\nIdentifique os principais gargalos da sua operação.")
+    with c3:
+        st.info("**Impacto Financeiro**\n\nVisualize o quanto as devoluções afetam seu lucro.")
 
-# ─────────────────────────────────────────────────────────
-# DASHBOARD
-# ─────────────────────────────────────────────────────────
 else:
     data_raw = st.session_state.processed_data
-    
-    # Header
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.title("📊 Dashboard de Análise")
-    with col2:
-        if st.button("← Voltar", use_container_width=True):
-            st.session_state.processed_data = None
-            st.rerun()
+    st.title("📊 Dashboard de Análise")
     
     # ─────────────────────────────────────────────────────
     # CABEÇALHO GLOBAL DE FILTROS
