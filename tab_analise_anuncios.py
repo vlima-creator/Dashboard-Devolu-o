@@ -111,6 +111,10 @@ Foque apenas em melhorias possíveis em anúncios de catálogo (preço, atacado,
                         
                         dados = resultado['dados_extraidos']
                         
+                        # Mostrar aviso se houve bloqueio
+                        if dados.get('status') == 'bloqueado':
+                            st.warning(f"⚠️ **Nota:** {dados.get('mensagem', 'Não foi possível extrair todos os dados diretamente.')}")
+                        
                         # Criar colunas para exibir os dados de forma organizada
                         col1, col2 = st.columns(2)
                         

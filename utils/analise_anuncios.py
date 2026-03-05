@@ -52,13 +52,18 @@ def extrair_dados_anuncio(url: str) -> Dict[str, Any]:
     try:
         # Headers mais realistas para evitar bloqueios
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'pt-BR,pt;q=0.9',
-            'Accept-Encoding': 'gzip, deflate',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Accept-Encoding': 'gzip, deflate, br',
             'DNT': '1',
             'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1'
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0'
         }
         
         # Fazer requisição com timeout maior
@@ -67,8 +72,8 @@ def extrair_dados_anuncio(url: str) -> Dict[str, Any]:
         
         soup = BeautifulSoup(response.content, 'html.parser')
         
-        # Verificar se foi redirecionado para login (bloqueio do ML)
-        if 'login' in response.url.lower() or 'acesse sua conta' in response.text.lower():
+        # Verificar se foi redirecionado para login ou página de verificação (bloqueio do ML)
+        if 'login' in response.url.lower() or 'acesse sua conta' in response.text.lower() or 'suspicious_traffic' in response.text.lower():
             return {
                 'url': url,
                 'titulo': '',
@@ -77,7 +82,7 @@ def extrair_dados_anuncio(url: str) -> Dict[str, Any]:
                 'vendedor': '',
                 'avaliacoes': '',
                 'status': 'bloqueado',
-                'mensagem': 'Mercado Livre bloqueou a requisição. A análise será feita apenas com o link.'
+                'mensagem': 'O Mercado Livre detectou tráfego automatizado e bloqueou a extração direta. A IA fará a análise baseada no link e no conhecimento prévio.'
             }
         
         # Extrair dados básicos
@@ -195,7 +200,8 @@ Com base nesses dados e seguindo o prompt abaixo, faça uma análise completa:
 """
         
         # Fazer a chamada direta à API do Google Gemini v1 via HTTPS
-        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        # Usando v1 em vez de v1beta para maior estabilidade
+        api_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
         
         headers = {
             "Content-Type": "application/json"
