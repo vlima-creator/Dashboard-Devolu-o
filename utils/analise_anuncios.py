@@ -1,15 +1,14 @@
 import requests
 from bs4 import BeautifulSoup
-import google.generativeai as genai
 import os
 import streamlit as st
 from typing import Optional, Dict, Any
 import json
 import time
 
-# Inicializar cliente Google Generative AI (Gemini)
-def get_gemini_client():
-    """Obtém o cliente Gemini com a chave de API do ambiente ou st.secrets."""
+# Obter chave de API do Google Gemini
+def get_gemini_api_key():
+    """Obtém a chave de API do Gemini do ambiente ou st.secrets."""
     
     api_key = None
     
@@ -37,8 +36,7 @@ def get_gemini_client():
         """)
         st.stop()
     
-    genai.configure(api_key=api_key)
-    return genai
+    return api_key
 
 def extrair_dados_anuncio(url: str) -> Dict[str, Any]:
     """
@@ -146,7 +144,7 @@ def extrair_dados_anuncio(url: str) -> Dict[str, Any]:
 def analisar_anuncio_com_ia(dados_anuncio: Dict[str, Any], prompt_usuario: str, url: str) -> str:
     """
     Envia os dados do anúncio para a IA analisar com base no prompt do usuário.
-    Se o scraping falhar, envia apenas o link.
+    Usa chamada direta via HTTPS para a API do Google Gemini v1.
     
     Args:
         dados_anuncio: Dicionário com dados extraídos do anúncio
@@ -157,8 +155,7 @@ def analisar_anuncio_com_ia(dados_anuncio: Dict[str, Any], prompt_usuario: str, 
         Análise da IA em formato de texto
     """
     try:
-        genai_client = get_gemini_client()
-        model = genai.GenerativeModel('gemini-pro')
+        api_key = get_gemini_api_key()
         
         # Construir o contexto com os dados do anúncio
         if dados_anuncio.get('status') == 'bloqueado' or not dados_anuncio.get('titulo'):
@@ -197,10 +194,39 @@ Com base nesses dados e seguindo o prompt abaixo, faça uma análise completa:
 {prompt_usuario}
 """
         
-        # Fazer a chamada à API do Gemini
-        response = model.generate_content(contexto)
+        # Fazer a chamada direta à API do Google Gemini v1 via HTTPS
+        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
         
-        return response.text
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "text": contexto
+                        }
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.7,
+                "maxOutputTokens": 4000
+            }
+        }
+        
+        response = requests.post(api_url, json=payload, headers=headers, timeout=30)
+        
+        if response.status_code == 200:
+            result = response.json()
+            if 'candidates' in result and len(result['candidates']) > 0:
+                if 'content' in result['candidates'][0] and 'parts' in result['candidates'][0]['content']:
+                    return result['candidates'][0]['content']['parts'][0]['text']
+            return "Erro: Resposta vazia da IA"
+        else:
+            return f"Erro ao analisar com IA (Status {response.status_code}): {response.text}"
         
     except Exception as e:
         return f"Erro ao analisar com IA: {str(e)}"
