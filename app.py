@@ -324,7 +324,6 @@ with st.sidebar:
             key="config_visualizacao",
             help="Altera como os produtos são agrupados nas tabelas e gráficos"
         )
-        agrupar_por = 'SKU' if visualizacao == "SKU" else 'Título'
         
         st.markdown("---")
         if st.button("🗑️ Limpar Dados", use_container_width=True):
@@ -335,6 +334,10 @@ with st.sidebar:
 # CONTEÚDO PRINCIPAL
 # ─────────────────────────────────────────────────────────
 if st.session_state.processed_data is None:
+    # Definir valores padrão para evitar erros de escopo
+    visualizacao = "SKU"
+    agrupar_por = "SKU"
+    
     st.title("📊 Dashboard Vendas x Devoluções")
     st.markdown("""
     ### Bem-vindo! 
@@ -359,6 +362,11 @@ if st.session_state.processed_data is None:
 
 else:
     data_raw = st.session_state.processed_data
+    
+    # Recuperar configuração da sidebar ou usar padrão
+    visualizacao = st.session_state.get('config_visualizacao', 'SKU')
+    agrupar_por = 'SKU' if visualizacao == "SKU" else 'Título'
+    
     st.title("📊 Dashboard de Análise")
     
     # ─────────────────────────────────────────────────────
