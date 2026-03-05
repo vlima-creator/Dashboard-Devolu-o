@@ -368,7 +368,7 @@ else:
     
     # Recuperar configuração da sidebar ou usar padrão
     visualizacao = st.session_state.get('config_visualizacao', 'SKU')
-    agrupar_por = 'SKU' if visualizacao == "SKU" else 'Título'
+    agrupar_por = 'SKU' if visualizacao == "SKU" else 'Título do anúncio'
     
     st.title("📊 Dashboard de Análise")
     

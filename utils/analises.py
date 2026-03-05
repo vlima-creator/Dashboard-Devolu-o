@@ -288,7 +288,7 @@ def analisar_ads(vendas, matriz, full, max_date, dias_atras):
 def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=None, agrupar_por='SKU'):
     """
     Análise de SKUs ou Produtos com maior risco.
-    agrupar_por: 'SKU' ou 'Título'
+    agrupar_por: 'SKU' ou 'Título do anúncio'
     """
     
     if matriz is None:
@@ -313,9 +313,13 @@ def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=None, agrupa
     skus_data = {}
     
     # Determinar coluna de agrupamento
-    col_agrup = 'SKU' if agrupar_por == 'SKU' else 'Título'
+    col_agrup = agrupar_por
     if col_agrup not in vendas_periodo.columns:
-        col_agrup = 'SKU' # Fallback
+        # Tentar fallback para 'Título' se 'Título do anúncio' não existir
+        if col_agrup == 'Título do anúncio' and 'Título' in vendas_periodo.columns:
+            col_agrup = 'Título'
+        else:
+            col_agrup = 'SKU' # Fallback final
         
     for _, venda in vendas_periodo.iterrows():
         item_id = str(venda.get(col_agrup, 'N/A'))
