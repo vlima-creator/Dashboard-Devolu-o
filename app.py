@@ -925,3 +925,24 @@ else:
             )
         except Exception as e:
             st.error(f"Erro ao exportar: {str(e)}")
+
+# ─── RODAPÉ ───
+st.markdown("""
+    <style>
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: transparent;
+        color: white;
+        text-align: center;
+        padding: 10px;
+        font-size: 0.8rem;
+        z-index: 999;
+    }
+    </style>
+    <div class="footer">
+        © Desenvolvido por Vinicius Lima / CNPJ: 47.192.694/0001-70
+    </div>
+""", unsafe_allow_html=True)
