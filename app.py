@@ -8,6 +8,8 @@ from utils.metricas import calcular_metricas, calcular_qualidade_arquivo
 from utils.export import exportar_xlsx
 from utils.analises import analisar_frete, analisar_motivos, analisar_ads, analisar_skus, simular_reducao
 from utils.formatacao import formatar_brl, formatar_percentual, formatar_pct_direto, formatar_numero, formatar_risco
+from utils.analise_anuncios import processar_analise_completa
+from tab_analise_anuncios import render_tab_analise_anuncios
 
 # Configuração da página
 st.set_page_config(
@@ -407,9 +409,9 @@ else:
     # ─────────────────────────────────────────────────────
     # ABAS
     # ─────────────────────────────────────────────────────
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
         "Resumo", "Janelas", "Matriz/Full", "Frete", 
-        "Motivos", "Ads", "Anúncios", "Simulador"
+        "Motivos", "Ads", "Anúncios", "Simulador", "IA Análise"
     ])
     
     # ─── TAB 1: RESUMO ───
@@ -910,6 +912,10 @@ else:
             render_metric_card("PERDA SIMULADA", formatar_brl(dinheiro_recuperado), f"Antes: {formatar_brl(impacto_total)}", "💰")
         with c3:
             render_metric_card("ECONOMIA ESTIMADA", formatar_brl(dinheiro_recuperado), "Reducao de perda", "📈")
+    
+    # ─── TAB 9: IA ANÁLISE DE ANÚNCIOS ───
+    with tab9:
+        render_tab_analise_anuncios()
     
     # ─── EXPORT ───
     st.markdown("---")
