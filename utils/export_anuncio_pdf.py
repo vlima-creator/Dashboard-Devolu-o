@@ -1,6 +1,6 @@
 """
 Módulo para exportar análises de anúncios para PDF
-Abordagem ultra-robusta para evitar erros de espaço horizontal.
+Abordagem minimalista e robusta - sem multi_cell problemático.
 """
 
 from fpdf import FPDF
@@ -8,139 +8,189 @@ from io import BytesIO
 from datetime import datetime
 from typing import Dict, Any
 
-class PDFRelatorioAnuncio(FPDF):
-    """Classe customizada para gerar PDF de análise de anúncios"""
-    
-    def __init__(self):
-        # Definir orientação Retrato, unidade mm, formato A4
-        super().__init__(orientation='P', unit='mm', format='A4')
-        # Definir margens fixas e seguras (20mm em cada lado)
-        self.set_margins(20, 20, 20)
-        self.set_auto_page_break(auto=True, margin=20)
-        # Largura útil da página (A4 = 210mm - 20mm*2 = 170mm)
-        self.effective_width = 170
-        
-    def header(self):
-        """Cabeçalho do PDF"""
-        self.set_font("Helvetica", "B", 16)
-        self.set_text_color(31, 78, 120)
-        self.cell(0, 10, "Relatorio de Analise de Anuncio", ln=True, align="C")
-        self.ln(5)
-        
-    def footer(self):
-        """Rodapé do PDF"""
-        self.set_y(-15)
-        self.set_font("Helvetica", "I", 8)
-        self.set_text_color(128, 128, 128)
-        self.cell(0, 10, f"Pagina {self.page_no()} | Gerado em {datetime.now().strftime('%d/%m/%Y %H:%M')}", align="C")
-
-def limpar_texto_pdf(texto: str) -> str:
-    """Limpa o texto para ser compatível com PDF (ASCII)"""
+def limpar_texto_pdf(texto: str, max_len: int = 500) -> str:
+    """Limpa o texto para ser compatível com PDF"""
     if not texto:
         return ""
     
-    # Substituições básicas de Markdown e caracteres especiais
-    texto = texto.replace('**', '').replace('##', '').replace('###', '').replace('*', '-')
+    # Converter para string se não for
+    texto = str(texto)
     
-    # Remover emojis e caracteres não-latin1
+    # Remover caracteres especiais e emojis
+    texto = texto.replace('**', '').replace('##', '').replace('###', '')
+    texto = texto.replace('*', '-').replace('`', '')
+    
+    # Remover caracteres não-latin1
     try:
-        # Tentar converter para latin-1 (padrão do FPDF) ignorando erros
-        return texto.encode('latin-1', 'ignore').decode('latin-1')
+        texto = texto.encode('latin-1', 'ignore').decode('latin-1')
     except:
-        # Fallback para ASCII se latin-1 falhar
-        return texto.encode('ascii', 'ignore').decode('ascii')
+        texto = texto.encode('ascii', 'ignore').decode('ascii')
+    
+    # Limitar tamanho
+    return texto[:max_len]
+
+def quebrar_texto(texto: str, max_chars: int = 80) -> list:
+    """Quebra o texto em linhas com número máximo de caracteres"""
+    linhas = []
+    palavras = texto.split()
+    linha_atual = ""
+    
+    for palavra in palavras:
+        if len(linha_atual) + len(palavra) + 1 <= max_chars:
+            linha_atual += (" " if linha_atual else "") + palavra
+        else:
+            if linha_atual:
+                linhas.append(linha_atual)
+            linha_atual = palavra
+    
+    if linha_atual:
+        linhas.append(linha_atual)
+    
+    return linhas if linhas else [""]
 
 def gerar_pdf_analise_anuncio(dados_anuncio: Dict[str, Any], analise_ia: str, url: str) -> BytesIO:
     """
-    Gera um PDF com a análise completa do anúncio usando uma abordagem simplificada e robusta.
+    Gera um PDF com a análise completa do anúncio.
+    Abordagem minimalista usando apenas cell() para evitar problemas de espaço.
     """
     
-    pdf = PDFRelatorioAnuncio()
+    # Criar PDF com margens seguras
+    pdf = FPDF(orientation='P', unit='mm', format='A4')
+    pdf.set_margins(15, 15, 15)
+    pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     
-    # --- SEÇÃO 1: DADOS DO ANÚNCIO ---
+    # Cores
+    cor_titulo = (31, 78, 120)
+    cor_texto = (0, 0, 0)
+    cor_cinza = (128, 128, 128)
+    
+    # ========== CABEÇALHO ==========
+    pdf.set_font("Helvetica", "B", 18)
+    pdf.set_text_color(*cor_titulo)
+    pdf.cell(0, 10, "Relatorio de Analise", ln=True, align="C")
+    pdf.set_text_color(*cor_cinza)
+    pdf.set_font("Helvetica", "I", 9)
+    pdf.cell(0, 5, f"Gerado em {datetime.now().strftime('%d/%m/%Y %H:%M')}", ln=True, align="C")
+    pdf.ln(5)
+    
+    # ========== SEÇÃO 1: DADOS DO ANÚNCIO ==========
     pdf.set_font("Helvetica", "B", 12)
-    pdf.set_text_color(31, 78, 120)
+    pdf.set_text_color(*cor_titulo)
     pdf.cell(0, 8, "1. Informacoes do Anuncio", ln=True)
-    pdf.set_draw_color(31, 78, 120)
-    pdf.line(20, pdf.get_y(), 190, pdf.get_y())
+    pdf.line(15, pdf.get_y(), 195, pdf.get_y())
     pdf.ln(3)
     
-    pdf.set_font("Helvetica", "", 9)
-    pdf.set_text_color(0, 0, 0)
-    
-    # Função auxiliar para adicionar linhas de dados
-    def add_row(label, value):
+    # Função para adicionar linha de dados
+    def add_data_line(label: str, value: str):
         pdf.set_font("Helvetica", "B", 9)
-        pdf.cell(30, 6, f"{label}:", ln=0)
+        pdf.set_text_color(*cor_titulo)
+        pdf.cell(35, 6, label + ":", ln=False)
+        
         pdf.set_font("Helvetica", "", 9)
-        # Usar multi_cell com largura fixa para o valor
-        pdf.multi_cell(140, 6, limpar_texto_pdf(str(value)))
+        pdf.set_text_color(*cor_texto)
+        
+        # Quebrar valor em linhas se muito longo
+        valor_limpo = limpar_texto_pdf(value, 100)
+        linhas_valor = quebrar_texto(valor_limpo, 70)
+        
+        for i, linha in enumerate(linhas_valor):
+            if i == 0:
+                pdf.cell(0, 6, linha, ln=True)
+            else:
+                pdf.cell(35, 6, "", ln=False)  # Espaço para indentação
+                pdf.cell(0, 6, linha, ln=True)
+        
         pdf.ln(1)
-
-    add_row("Titulo", dados_anuncio.get('titulo', 'Nao extraido'))
-    add_row("Preco", dados_anuncio.get('preco', 'Nao extraido'))
-    add_row("Vendedor", dados_anuncio.get('vendedor', 'Nao extraido'))
-    add_row("Avaliacoes", dados_anuncio.get('avaliacoes', 'Nao extraido'))
-    add_row("URL", url)
     
+    # Adicionar dados
+    add_data_line("Titulo", str(dados_anuncio.get('titulo', 'Nao extraido')))
+    add_data_line("Preco", str(dados_anuncio.get('preco', 'Nao extraido')))
+    add_data_line("Vendedor", str(dados_anuncio.get('vendedor', 'Nao extraido')))
+    add_data_line("Avaliacoes", str(dados_anuncio.get('avaliacoes', 'Nao extraido')))
+    add_data_line("URL", url[:80])
+    
+    # Descrição (se existir)
     if dados_anuncio.get('descricao'):
         pdf.ln(2)
         pdf.set_font("Helvetica", "B", 9)
-        pdf.cell(0, 6, "Descricao Curta:", ln=True)
+        pdf.set_text_color(*cor_titulo)
+        pdf.cell(0, 6, "Descricao:", ln=True)
+        
         pdf.set_font("Helvetica", "", 8)
-        # Limitar descrição para não ocupar muito espaço no PDF
-        desc = limpar_texto_pdf(str(dados_anuncio.get('descricao')))[:500]
-        pdf.multi_cell(0, 5, desc)
+        pdf.set_text_color(*cor_texto)
+        desc = limpar_texto_pdf(str(dados_anuncio.get('descricao')), 300)
+        linhas_desc = quebrar_texto(desc, 75)
+        
+        for linha in linhas_desc:
+            pdf.cell(0, 5, linha, ln=True)
+        
         pdf.ln(2)
-
-    # --- SEÇÃO 2: ANÁLISE DA IA ---
-    pdf.ln(5)
+    
+    # ========== SEÇÃO 2: ANÁLISE DA IA ==========
+    pdf.ln(3)
     pdf.set_font("Helvetica", "B", 12)
-    pdf.set_text_color(31, 78, 120)
+    pdf.set_text_color(*cor_titulo)
     pdf.cell(0, 8, "2. Analise Detalhada da IA", ln=True)
-    pdf.line(20, pdf.get_y(), 190, pdf.get_y())
-    pdf.ln(4)
+    pdf.line(15, pdf.get_y(), 195, pdf.get_y())
+    pdf.ln(3)
     
-    # Processar o texto da análise linha por linha
-    pdf.set_font("Helvetica", "", 9)
-    pdf.set_text_color(0, 0, 0)
+    # Processar análise linha por linha
+    pdf.set_font("Helvetica", "", 8)
+    pdf.set_text_color(*cor_texto)
     
-    linhas = analise_ia.split('\n')
-    for linha in linhas:
-        linha_limpa = limpar_texto_pdf(linha.strip())
+    linhas_analise = analise_ia.split('\n')
+    
+    for linha in linhas_analise:
+        linha_limpa = limpar_texto_pdf(linha.strip(), 150)
+        
         if not linha_limpa:
             pdf.ln(2)
             continue
-            
-        # Detectar se é um título de seção (Markdown ##)
-        if linha.startswith('##'):
-            pdf.ln(3)
-            pdf.set_font("Helvetica", "B", 11)
-            pdf.set_text_color(31, 78, 120)
-            pdf.multi_cell(0, 6, linha_limpa)
-            pdf.set_font("Helvetica", "", 9)
-            pdf.set_text_color(0, 0, 0)
-        # Detectar se é um subtítulo (Markdown ###)
-        elif linha.startswith('###'):
+        
+        # Detectar títulos de seção
+        if linha.startswith('##') and not linha.startswith('###'):
             pdf.ln(2)
             pdf.set_font("Helvetica", "B", 10)
-            pdf.multi_cell(0, 5, linha_limpa)
-            pdf.set_font("Helvetica", "", 9)
-        # Texto normal ou lista
+            pdf.set_text_color(*cor_titulo)
+            pdf.cell(0, 6, linha_limpa, ln=True)
+            pdf.set_font("Helvetica", "", 8)
+            pdf.set_text_color(*cor_texto)
+        # Detectar subtítulos
+        elif linha.startswith('###'):
+            pdf.ln(1)
+            pdf.set_font("Helvetica", "B", 9)
+            pdf.set_text_color(50, 50, 50)
+            pdf.cell(0, 5, linha_limpa, ln=True)
+            pdf.set_font("Helvetica", "", 8)
+            pdf.set_text_color(*cor_texto)
+        # Linhas normais ou com lista
         else:
-            # Se começar com marcador de lista, adicionar um pequeno recuo visual
-            prefixo = "  " if (linha_limpa.startswith('-') or linha_limpa.startswith('*')) else ""
-            pdf.multi_cell(0, 5, prefixo + linha_limpa)
-            
-    # Finalização
+            # Quebrar linhas muito longas
+            linhas_quebradas = quebrar_texto(linha_limpa, 80)
+            for i, linha_quebrada in enumerate(linhas_quebradas):
+                if i == 0 and (linha.startswith('-') or linha.startswith('*')):
+                    pdf.cell(0, 4, "  - " + linha_quebrada, ln=True)
+                else:
+                    pdf.cell(0, 4, linha_quebrada, ln=True)
+    
+    # ========== RODAPÉ ==========
+    pdf.ln(5)
+    pdf.set_font("Helvetica", "I", 7)
+    pdf.set_text_color(*cor_cinza)
+    rodape = "Este relatorio foi gerado automaticamente. As recomendacoes devem ser validadas conforme o contexto do seu negocio."
+    linhas_rodape = quebrar_texto(rodape, 85)
+    for linha in linhas_rodape:
+        pdf.cell(0, 3, linha, ln=True)
+    
+    # Gerar PDF
     output = BytesIO()
-    # Gerar PDF como string e converter para bytes
     pdf_content = pdf.output(dest='S')
+    
     if isinstance(pdf_content, str):
         output.write(pdf_content.encode('latin-1'))
     else:
         output.write(pdf_content)
-    output.seek(0)
     
+    output.seek(0)
     return output
