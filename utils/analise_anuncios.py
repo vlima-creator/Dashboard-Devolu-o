@@ -158,7 +158,7 @@ def analisar_anuncio_com_ia(dados_anuncio: Dict[str, Any], prompt_usuario: str, 
     """
     try:
         genai_client = get_gemini_client()
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
         
         # Construir o contexto com os dados do anúncio
         if dados_anuncio.get('status') == 'bloqueado' or not dados_anuncio.get('titulo'):
