@@ -1,35 +1,44 @@
 import requests
 from bs4 import BeautifulSoup
-from openai import OpenAI
+import google.generativeai as genai
 import os
 import streamlit as st
 from typing import Optional, Dict, Any
 import json
 import time
 
-# Inicializar cliente OpenAI (usa OPENAI_API_KEY do ambiente ou st.secrets)
-def get_openai_client():
-    """Obtém o cliente OpenAI com a chave de API do ambiente ou st.secrets."""
+# Inicializar cliente Google Generative AI (Gemini)
+def get_gemini_client():
+    """Obtém o cliente Gemini com a chave de API do ambiente ou st.secrets."""
     
     api_key = None
     
     # Tentar obter da st.secrets (Streamlit Cloud)
     try:
-        api_key = st.secrets.get("OPENAI_API_KEY")
+        api_key = st.secrets.get("GEMINI_API_KEY")
     except:
         pass
     
     # Se não encontrou ou é o valor de exemplo, tentar do ambiente
     if not api_key or "sua_chave" in api_key:
-        api_key = os.getenv('OPENAI_API_KEY')
+        api_key = os.getenv('GEMINI_API_KEY')
     
     if not api_key:
         # Se não encontrar, o Streamlit mostrará um erro amigável
-        st.error("🔑 **Erro de Configuração:** A chave `OPENAI_API_KEY` não foi encontrada. Por favor, adicione-a nos 'Secrets' do Streamlit Cloud.")
-        st.info("Para configurar: Vá em Settings > Secrets e adicione: `OPENAI_API_KEY = \"sua_chave_aqui\"`")
+        st.error("🔑 **Erro de Configuração:** A chave `GEMINI_API_KEY` não foi encontrada.")
+        st.info("""
+        Para configurar:
+        1. Acesse [Google AI Studio](https://aistudio.google.com/app/apikey)
+        2. Clique em "Create API Key"
+        3. Copie a chave gerada
+        4. No Streamlit Cloud: Settings > Secrets
+        5. Cole: `GEMINI_API_KEY = "sua_chave_aqui"`
+        6. Salve
+        """)
         st.stop()
     
-    return OpenAI(api_key=api_key)
+    genai.configure(api_key=api_key)
+    return genai
 
 def extrair_dados_anuncio(url: str) -> Dict[str, Any]:
     """
@@ -148,7 +157,8 @@ def analisar_anuncio_com_ia(dados_anuncio: Dict[str, Any], prompt_usuario: str, 
         Análise da IA em formato de texto
     """
     try:
-        client = get_openai_client()
+        genai_client = get_gemini_client()
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         # Construir o contexto com os dados do anúncio
         if dados_anuncio.get('status') == 'bloqueado' or not dados_anuncio.get('titulo'):
@@ -187,24 +197,10 @@ Com base nesses dados e seguindo o prompt abaixo, faça uma análise completa:
 {prompt_usuario}
 """
         
-        # Fazer a chamada à API
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Você é um especialista em análise de anúncios de e-commerce do Mercado Livre. Forneça análises detalhadas, estruturadas, acionáveis e em Markdown."
-                },
-                {
-                    "role": "user",
-                    "content": contexto
-                }
-            ],
-            temperature=0.7,
-            max_tokens=4000
-        )
+        # Fazer a chamada à API do Gemini
+        response = model.generate_content(contexto)
         
-        return response.choices[0].message.content
+        return response.text
         
     except Exception as e:
         return f"Erro ao analisar com IA: {str(e)}"

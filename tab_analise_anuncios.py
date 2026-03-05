@@ -9,8 +9,21 @@ def render_tab_analise_anuncios():
     st.markdown('<div class="chart-title">Análise Inteligente de Anúncios com IA</div>', unsafe_allow_html=True)
     
     st.markdown("""
-    Esta ferramenta utiliza Inteligência Artificial para analisar anúncios de produtos e identificar 
+    Esta ferramenta utiliza **Google Gemini 1.5 Flash** (Gratuito) para analisar anúncios de produtos e identificar 
     pontos de melhoria que podem reduzir devoluções e aumentar conversões.
+    """)
+    
+    # Aviso de configuração
+    st.info("""
+    🔑 **Primeira Vez?** Você precisa de uma chave de API do Google Gemini (gratuita). 
+    
+    **Como configurar:**
+    1. Acesse [Google AI Studio](https://aistudio.google.com/app/apikey)
+    2. Clique em "Create API Key"
+    3. Copie a chave gerada
+    4. No Streamlit Cloud: Settings > Secrets
+    5. Cole: `GEMINI_API_KEY = "sua_chave_aqui"`
+    6. Salve e recarregue o app
     """)
     
     # Seção de configuração
@@ -149,9 +162,11 @@ Foque apenas em melhorias possíveis em anúncios de catálogo (preço, atacado,
         - **Análise:** A IA leva em conta o título, descrição, preço e avaliações do anúncio
         - **Visualização:** Toda a análise é exibida diretamente no painel para fácil visualização
         - **Histórico:** Você pode manter múltiplas análises abertas em abas diferentes do navegador para comparação
+        - **Gratuito:** Usa o Google Gemini 1.5 Flash, que tem um plano gratuito generoso
         
         ### Possíveis problemas e soluções:
-        - **Dados não extraídos:** O Mercado Livre pode estar bloqueando requisições. Tente novamente em alguns minutos.
-        - **Erro de API:** Verifique se a chave de API está configurada corretamente.
+        - **Dados não extraídos:** O Mercado Livre pode estar bloqueando requisições. A IA ainda fornecerá análise baseada no link.
+        - **Erro de API:** Verifique se a chave `GEMINI_API_KEY` está configurada corretamente nos Secrets do Streamlit.
         - **Análise incompleta:** Se os dados extraídos forem limitados, a IA ainda fornecerá recomendações baseadas no que conseguiu extrair.
+        - **Limite de requisições:** O plano gratuito do Gemini permite muitas requisições por dia. Se atingir o limite, aguarde o reset.
         """)
