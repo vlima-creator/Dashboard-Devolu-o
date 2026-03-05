@@ -6,6 +6,13 @@ import streamlit as st
 from typing import Optional, Dict, Any
 import json
 import time
+import sys
+
+# Tentar importar a chave de config_secrets (arquivo local não commitado)
+try:
+    from config_secrets import OPENAI_API_KEY as CONFIG_API_KEY
+except ImportError:
+    CONFIG_API_KEY = None
 
 # Inicializar cliente OpenAI (usa OPENAI_API_KEY do ambiente ou st.secrets)
 def get_openai_client():
@@ -22,6 +29,10 @@ def get_openai_client():
     # Se não encontrou, tentar do ambiente
     if not api_key:
         api_key = os.getenv('OPENAI_API_KEY')
+    
+    # Se ainda não encontrou, tentar do config_secrets
+    if not api_key and CONFIG_API_KEY:
+        api_key = CONFIG_API_KEY
     
     if not api_key:
         # Se não encontrar, o Streamlit mostrará um erro amigável
