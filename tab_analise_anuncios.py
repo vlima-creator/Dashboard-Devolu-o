@@ -16,13 +16,11 @@ def render_tab_analise_anuncios():
     # Seção de configuração
     st.markdown("### ⚙️ Configuração")
     
-    col_url, col_btn = st.columns([4, 1])
-    with col_url:
-        url_anuncio = st.text_input(
-            "Cole o link do anúncio (Mercado Livre ou similar)",
-            placeholder="https://www.mercadolivre.com.br/...",
-            key="url_anuncio_input"
-        )
+    url_anuncio = st.text_input(
+        "Cole o link do anúncio (Mercado Livre ou similar)",
+        placeholder="https://www.mercadolivre.com.br/...",
+        key="url_anuncio_input"
+    )
     
     st.markdown("### 📝 Prompt de Análise")
     st.markdown("O prompt abaixo está configurado para análise profunda de anúncios do Mercado Livre. Customize conforme necessário.")
@@ -71,7 +69,7 @@ Foque apenas em melhorias possíveis em anúncios de catálogo (preço, atacado,
     # Botão de análise
     st.markdown("### 🚀 Executar Análise")
     
-    col1, col2, col3 = st.columns([2, 1, 1])
+    col1, col2 = st.columns([2, 1])
     with col1:
         btn_analisar = st.button("🔍 Analisar Anúncio", use_container_width=True, type="primary")
     with col2:
@@ -94,52 +92,49 @@ Foque apenas em melhorias possíveis em anúncios de catálogo (preço, atacado,
                     if resultado['status'] == 'erro':
                         st.error(f"❌ Erro ao processar: {resultado.get('mensagem', 'Erro desconhecido')}")
                     else:
-                        # Exibir dados extraídos
+                        # Exibir dados extraídos em um container destacado
+                        st.markdown("---")
                         st.markdown("### 📊 Dados Extraídos do Anúncio")
                         
                         dados = resultado['dados_extraidos']
+                        
+                        # Criar colunas para exibir os dados de forma organizada
                         col1, col2 = st.columns(2)
                         
                         with col1:
-                            st.markdown(f"**Título:** {dados.get('titulo', 'N/A')}")
-                            st.markdown(f"**Preço:** {dados.get('preco', 'N/A')}")
-                            st.markdown(f"**Vendedor:** {dados.get('vendedor', 'N/A')}")
+                            with st.container(border=True):
+                                st.markdown("**📌 Título**")
+                                st.markdown(dados.get('titulo', '❌ Não foi possível extrair') or '❌ Não foi possível extrair')
+                                
+                                st.markdown("**💰 Preço**")
+                                st.markdown(dados.get('preco', '❌ Não foi possível extrair') or '❌ Não foi possível extrair')
+                                
+                                st.markdown("**👤 Vendedor**")
+                                st.markdown(dados.get('vendedor', '❌ Não foi possível extrair') or '❌ Não foi possível extrair')
                         
                         with col2:
-                            st.markdown(f"**Avaliações:** {dados.get('avaliacoes', 'N/A')}")
-                            st.markdown(f"**URL:** [{dados.get('url', 'N/A')[:50]}...]({dados.get('url', '#')})")
+                            with st.container(border=True):
+                                st.markdown("**⭐ Avaliações**")
+                                st.markdown(dados.get('avaliacoes', '❌ Não foi possível extrair') or '❌ Não foi possível extrair')
+                                
+                                st.markdown("**🔗 URL**")
+                                st.markdown(f"[Acessar anúncio]({dados.get('url', '#')})")
                         
+                        # Exibir descrição em um container separado
                         if dados.get('descricao'):
-                            st.markdown(f"**Descrição:** {dados.get('descricao')}")
+                            with st.container(border=True):
+                                st.markdown("**📝 Descrição**")
+                                st.markdown(dados.get('descricao'))
                         
-                        # Exibir análise da IA
-                        st.markdown("### 🤖 Análise da IA")
-                        st.markdown(resultado['analise_ia'])
-                        
-                        # Botão para exportar análise
+                        # Exibir análise da IA em um container destacado
                         st.markdown("---")
-                        analise_texto = f"""# Análise de Anúncio - {dados.get('titulo', 'Sem título')}
-
-## Dados do Anúncio
-- **URL:** {dados.get('url', 'N/A')}
-- **Preço:** {dados.get('preco', 'N/A')}
-- **Vendedor:** {dados.get('vendedor', 'N/A')}
-- **Avaliações:** {dados.get('avaliacoes', 'N/A')}
-
-## Análise
-{resultado['analise_ia']}
-
----
-Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}
-"""
+                        st.markdown("### 🤖 Análise da IA")
                         
-                        st.download_button(
-                            label="📥 Baixar Análise (Markdown)",
-                            data=analise_texto,
-                            file_name=f"analise_anuncio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
-                            mime="text/markdown",
-                            use_container_width=True
-                        )
+                        with st.container(border=True):
+                            st.markdown(resultado['analise_ia'])
+                        
+                        # Adicionar informações de quando foi gerada
+                        st.markdown(f"*Análise gerada em: {datetime.now().strftime('%d/%m/%Y às %H:%M:%S')}*")
                 
                 except Exception as e:
                     st.error(f"❌ Erro durante a análise: {str(e)}")
@@ -152,6 +147,11 @@ Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}
         - **Link:** Funciona com anúncios do Mercado Livre, Amazon e outras plataformas
         - **Prompt:** O prompt padrão está otimizado para análise profunda de anúncios do Mercado Livre
         - **Análise:** A IA leva em conta o título, descrição, preço e avaliações do anúncio
-        - **Exportação:** Você pode baixar a análise em Markdown para documentação ou compartilhamento
-        - **Histórico:** Mantenha múltiplas análises abertas em abas diferentes do navegador para comparação
+        - **Visualização:** Toda a análise é exibida diretamente no painel para fácil visualização
+        - **Histórico:** Você pode manter múltiplas análises abertas em abas diferentes do navegador para comparação
+        
+        ### Possíveis problemas e soluções:
+        - **Dados não extraídos:** O Mercado Livre pode estar bloqueando requisições. Tente novamente em alguns minutos.
+        - **Erro de API:** Verifique se a chave de API está configurada corretamente.
+        - **Análise incompleta:** Se os dados extraídos forem limitados, a IA ainda fornecerá recomendações baseadas no que conseguiu extrair.
         """)
