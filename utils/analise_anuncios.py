@@ -218,8 +218,10 @@ Com base nesses dados e seguindo o prompt abaixo, faça uma análise completa:
                 }
             ],
             "generationConfig": {
-                "temperature": 0.7,
-                "maxOutputTokens": 4000
+                "temperature": 0.3,
+                "maxOutputTokens": 8000,
+                "topP": 0.95,
+                "topK": 40
             }
         }
         
