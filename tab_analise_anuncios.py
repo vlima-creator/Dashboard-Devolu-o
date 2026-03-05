@@ -9,24 +9,6 @@ def render_tab_analise_anuncios():
     st.markdown('<div class="chart-container">', unsafe_allow_html=True)
     st.markdown('<div class="chart-title">Análise Inteligente de Anúncios com IA</div>', unsafe_allow_html=True)
     
-    st.markdown("""
-    Esta ferramenta utiliza **Google Gemini 2.5 Flash** (Gratuito) para analisar anúncio de produtos e identificar 
-    pontos de melhoria que podem reduzir devoluções e aumentar conversões.
-    """)
-    
-    # Aviso de configuração
-    st.info("""
-    🔑 **Primeira Vez?** Você precisa de uma chave de API do Google Gemini (gratuita). 
-    
-    **Como configurar:**
-    1. Acesse [Google AI Studio](https://aistudio.google.com/app/apikey)
-    2. Clique em "Create API Key"
-    3. Copie a chave gerada
-    4. No Streamlit Cloud: Settings > Secrets
-    5. Cole: `GEMINI_API_KEY = "sua_chave_aqui"`
-    6. Salve e recarregue o app
-    """)
-    
     # Seção de configuração
     st.markdown("### ⚙️ Configuração")
     
@@ -106,44 +88,6 @@ Foque apenas em melhorias possíveis em anúncios de catálogo (preço, atacado,
                     if resultado['status'] == 'erro':
                         st.error(f"❌ Erro ao processar: {resultado.get('mensagem', 'Erro desconhecido')}")
                     else:
-                        # Exibir dados extraídos em um container destacado
-                        st.markdown("---")
-                        st.markdown("### 📊 Dados Extraídos do Anúncio")
-                        
-                        dados = resultado['dados_extraidos']
-                        
-                        # Mostrar aviso se houve bloqueio
-                        if dados.get('status') == 'bloqueado':
-                            st.warning(f"⚠️ **Nota:** {dados.get('mensagem', 'Não foi possível extrair todos os dados diretamente.')}")
-                        
-                        # Criar colunas para exibir os dados de forma organizada
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            with st.container(border=True):
-                                st.markdown("**📌 Título**")
-                                st.markdown(dados.get('titulo', '❌ Não foi possível extrair') or '❌ Não foi possível extrair')
-                                
-                                st.markdown("**💰 Preço**")
-                                st.markdown(dados.get('preco', '❌ Não foi possível extrair') or '❌ Não foi possível extrair')
-                                
-                                st.markdown("**👤 Vendedor**")
-                                st.markdown(dados.get('vendedor', '❌ Não foi possível extrair') or '❌ Não foi possível extrair')
-                        
-                        with col2:
-                            with st.container(border=True):
-                                st.markdown("**⭐ Avaliações**")
-                                st.markdown(dados.get('avaliacoes', '❌ Não foi possível extrair') or '❌ Não foi possível extrair')
-                                
-                                st.markdown("**🔗 URL**")
-                                st.markdown(f"[Acessar anúncio]({dados.get('url', '#')})")
-                        
-                        # Exibir descrição em um container separado
-                        if dados.get('descricao'):
-                            with st.container(border=True):
-                                st.markdown("**📝 Descrição**")
-                                st.markdown(dados.get('descricao'))
-                        
                         # Exibir análise da IA em um container destacado
                         st.markdown("---")
                         st.markdown("### 🤖 Análise da IA")
@@ -191,16 +135,6 @@ Foque apenas em melhorias possíveis em anúncios de catálogo (preço, atacado,
         st.markdown("""
         - **Link:** Funciona com anúncios do Mercado Livre, Amazon e outras plataformas
         - **Prompt:** O prompt padrão está otimizado para análise profunda de anúncios do Mercado Livre
-        - **Análise:** A IA leva em conta o título, descrição, preço e avaliações do anúncio
-        - **Visualização:** Toda a análise é exibida diretamente no painel para fácil visualização
         - **PDF:** Você pode exportar a análise completa em PDF para compartilhar ou arquivar
         - **Histórico:** Você pode manter múltiplas análises abertas em abas diferentes do navegador para comparação
-        - **Gratuito:** Usa o Google Gemini 2.5 Flash, que tem um plano gratuito generoso
-        
-        ### Possíveis problemas e soluções:
-        - **Dados não extraídos:** O Mercado Livre pode estar bloqueando requisições. A IA ainda fornecerá análise baseada no link.
-        - **Erro de API:** Verifique se a chave `GEMINI_API_KEY` está configurada corretamente nos Secrets do Streamlit.
-        - **Análise incompleta:** Se os dados extraídos forem limitados, a IA ainda fornecerá recomendações baseadas no que conseguiu extrair.
-        - **Limite de requisições:** O plano gratuito do Gemini permite muitas requisições por dia. Se atingir o limite, aguarde o reset.
-        - **Erro ao gerar PDF:** Se houver erro na geração do PDF, tente novamente. Se persistir, verifique a análise no aplicativo.
         """)
