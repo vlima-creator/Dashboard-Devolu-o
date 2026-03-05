@@ -24,7 +24,9 @@ def get_openai_client():
         api_key = os.getenv('OPENAI_API_KEY')
     
     if not api_key:
-        raise ValueError("OPENAI_API_KEY não configurada. Por favor, configure a variável de ambiente ou adicione em st.secrets.")
+        # Se não encontrar, o Streamlit mostrará um erro amigável
+        st.error("🔑 **Erro de Configuração:** A chave `OPENAI_API_KEY` não foi encontrada. Por favor, adicione-a nos 'Secrets' do Streamlit Cloud ou como variável de ambiente.")
+        st.stop()
     
     return OpenAI(api_key=api_key)
 
@@ -56,6 +58,19 @@ def extrair_dados_anuncio(url: str) -> Dict[str, Any]:
         response.raise_for_status()
         
         soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Verificar se foi redirecionado para login (bloqueio do ML)
+        if 'login' in response.url.lower() or 'acesse sua conta' in response.text.lower():
+            return {
+                'url': url,
+                'titulo': '',
+                'preco': '',
+                'descricao': '',
+                'vendedor': '',
+                'avaliacoes': '',
+                'status': 'bloqueado',
+                'mensagem': 'Mercado Livre bloqueou a requisição. A análise será feita apenas com o link.'
+            }
         
         # Extrair dados básicos
         dados = {
@@ -103,38 +118,30 @@ def extrair_dados_anuncio(url: str) -> Dict[str, Any]:
         if avaliacoes_elem:
             dados['avaliacoes'] = avaliacoes_elem.get_text(strip=True)
         
-        # Se não conseguiu extrair muita informação, usar uma abordagem alternativa
-        if not dados['titulo']:
-            # Tentar extrair qualquer texto significativo
-            all_text = soup.get_text()
-            if all_text:
-                # Pegar as primeiras linhas como título
-                lines = [l.strip() for l in all_text.split('\n') if l.strip()]
-                if lines:
-                    dados['titulo'] = lines[0][:100]
-        
         return dados
         
     except requests.exceptions.RequestException as e:
         return {
             'url': url,
-            'status': 'erro',
-            'mensagem': f'Erro ao acessar o link: {str(e)}. Verifique se o URL está correto e se o Mercado Livre não está bloqueando requisições.'
+            'status': 'bloqueado',
+            'mensagem': f'Não foi possível acessar o link. A análise será feita apenas com o URL fornecido.'
         }
     except Exception as e:
         return {
             'url': url,
-            'status': 'erro',
-            'mensagem': f'Erro ao processar o anúncio: {str(e)}'
+            'status': 'bloqueado',
+            'mensagem': f'Erro ao processar o anúncio. A análise será feita apenas com o URL fornecido.'
         }
 
-def analisar_anuncio_com_ia(dados_anuncio: Dict[str, Any], prompt_usuario: str) -> str:
+def analisar_anuncio_com_ia(dados_anuncio: Dict[str, Any], prompt_usuario: str, url: str) -> str:
     """
     Envia os dados do anúncio para a IA analisar com base no prompt do usuário.
+    Se o scraping falhar, envia apenas o link.
     
     Args:
         dados_anuncio: Dicionário com dados extraídos do anúncio
         prompt_usuario: Prompt customizado do usuário
+        url: URL do anúncio (usado como fallback)
         
     Returns:
         Análise da IA em formato de texto
@@ -143,7 +150,26 @@ def analisar_anuncio_com_ia(dados_anuncio: Dict[str, Any], prompt_usuario: str) 
         client = get_openai_client()
         
         # Construir o contexto com os dados do anúncio
-        contexto = f"""
+        if dados_anuncio.get('status') == 'bloqueado' or not dados_anuncio.get('titulo'):
+            # Se foi bloqueado, enviar apenas o link
+            contexto = f"""
+Você é um especialista em análise de anúncios de e-commerce do Mercado Livre.
+
+Não consegui extrair os dados do anúncio diretamente (o Mercado Livre bloqueou a requisição), 
+mas aqui está o link do anúncio que você pode analisar:
+
+**URL do Anúncio:** {url}
+
+Por favor, acesse o link e faça uma análise completa seguindo o prompt abaixo:
+
+{prompt_usuario}
+
+Nota: Se você não conseguir acessar o link, forneça uma análise baseada na estrutura típica de anúncios do Mercado Livre 
+e nas melhores práticas para o tipo de produto que pode estar neste URL.
+"""
+        else:
+            # Se conseguiu extrair, enviar os dados
+            contexto = f"""
 Aqui estão os dados do anúncio para análise:
 
 **Título:** {dados_anuncio.get('titulo', 'N/A')}
@@ -151,7 +177,7 @@ Aqui estão os dados do anúncio para análise:
 **Vendedor:** {dados_anuncio.get('vendedor', 'N/A')}
 **Avaliações:** {dados_anuncio.get('avaliacoes', 'N/A')}
 **Descrição:** {dados_anuncio.get('descricao', 'N/A')}
-**URL:** {dados_anuncio.get('url', 'N/A')}
+**URL:** {url}
 
 ---
 
@@ -196,11 +222,8 @@ def processar_analise_completa(url: str, prompt_usuario: str) -> Dict[str, Any]:
     # Extrair dados do anúncio
     dados = extrair_dados_anuncio(url)
     
-    if dados['status'] == 'erro':
-        return dados
-    
-    # Analisar com IA
-    analise = analisar_anuncio_com_ia(dados, prompt_usuario)
+    # Analisar com IA (mesmo que o scraping tenha falhado)
+    analise = analisar_anuncio_com_ia(dados, prompt_usuario, url)
     
     return {
         'status': 'sucesso',
