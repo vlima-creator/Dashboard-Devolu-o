@@ -455,9 +455,12 @@ else:
             df_skus_top, _ = analisar_skus(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_global, 5, agrupar_por=agrupar_por)
             
             if not df_skus_top.empty:
+                # Garantir que a coluna de agrupamento existe no DataFrame retornado
+                col_y = agrupar_por if agrupar_por in df_skus_top.columns else df_skus_top.columns[0]
+                
                 df_skus_top = df_skus_top.sort_values('Dev.', ascending=True)
                 fig_bar = go.Figure(go.Bar(
-                    x=df_skus_top['Dev.'], y=df_skus_top[agrupar_por],
+                    x=df_skus_top['Dev.'], y=df_skus_top[col_y],
                     orientation='h', marker_color='#f59e0b'
                 ))
                 fig_bar.update_layout(
@@ -849,7 +852,11 @@ else:
                 df_display['Reemb.'] = df_display['Reemb.'].apply(lambda x: formatar_brl(x))
                 df_display['Custo Dev.'] = df_display['Custo Dev.'].apply(lambda x: formatar_brl(x))
                 df_display['Risco'] = df_display['Risco'].apply(lambda x: formatar_risco(x))
-                return df_display[[agrupar_por, 'Vendas', 'Dev.', 'Taxa', 'Impacto', 'Reemb.', 'Custo Dev.', 'Risco', 'Classe']]
+                
+                # Garantir que a coluna de agrupamento existe
+                col_id = agrupar_por if agrupar_por in df_display.columns else df_display.columns[0]
+                
+                return df_display[[col_id, 'Vendas', 'Dev.', 'Taxa', 'Impacto', 'Reemb.', 'Custo Dev.', 'Risco', 'Classe']]
             
             with sub_tab1:
                 df_vol = df_skus_all.sort_values('Dev.', ascending=False).head(20)
