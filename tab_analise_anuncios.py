@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import datetime
 from utils.analise_anuncios import processar_analise_completa
+from utils.export_anuncio_pdf import gerar_pdf_analise_anuncio
 
 def render_tab_analise_anuncios():
     """Renderiza a aba de Análise de Anúncios com IA"""
@@ -152,6 +153,33 @@ Foque apenas em melhorias possíveis em anúncios de catálogo (preço, atacado,
                         
                         # Adicionar informações de quando foi gerada
                         st.markdown(f"*Análise gerada em: {datetime.now().strftime('%d/%m/%Y às %H:%M:%S')}*")
+                        
+                        # Botão para gerar PDF
+                        st.markdown("---")
+                        st.markdown("### 📥 Exportar Relatório")
+                        
+                        try:
+                            # Gerar PDF
+                            pdf_bytes = gerar_pdf_analise_anuncio(
+                                dados_anuncio=resultado['dados_extraidos'],
+                                analise_ia=resultado['analise_ia'],
+                                url=url_anuncio
+                            )
+                            
+                            # Botão de download
+                            st.download_button(
+                                label="📄 Baixar Relatório em PDF",
+                                data=pdf_bytes,
+                                file_name=f"analise_anuncio_{datetime.now().strftime('%d_%m_%Y_%H_%M_%S')}.pdf",
+                                mime="application/pdf",
+                                use_container_width=True,
+                                type="primary"
+                            )
+                            
+                            st.success("✅ PDF pronto para download! Clique no botão acima para baixar o relatório completo.")
+                            
+                        except Exception as e:
+                            st.error(f"❌ Erro ao gerar PDF: {str(e)}")
                 
                 except Exception as e:
                     st.error(f"❌ Erro durante a análise: {str(e)}")
@@ -165,6 +193,7 @@ Foque apenas em melhorias possíveis em anúncios de catálogo (preço, atacado,
         - **Prompt:** O prompt padrão está otimizado para análise profunda de anúncios do Mercado Livre
         - **Análise:** A IA leva em conta o título, descrição, preço e avaliações do anúncio
         - **Visualização:** Toda a análise é exibida diretamente no painel para fácil visualização
+        - **PDF:** Você pode exportar a análise completa em PDF para compartilhar ou arquivar
         - **Histórico:** Você pode manter múltiplas análises abertas em abas diferentes do navegador para comparação
         - **Gratuito:** Usa o Google Gemini 2.5 Flash, que tem um plano gratuito generoso
         
@@ -173,4 +202,5 @@ Foque apenas em melhorias possíveis em anúncios de catálogo (preço, atacado,
         - **Erro de API:** Verifique se a chave `GEMINI_API_KEY` está configurada corretamente nos Secrets do Streamlit.
         - **Análise incompleta:** Se os dados extraídos forem limitados, a IA ainda fornecerá recomendações baseadas no que conseguiu extrair.
         - **Limite de requisições:** O plano gratuito do Gemini permite muitas requisições por dia. Se atingir o limite, aguarde o reset.
+        - **Erro ao gerar PDF:** Se houver erro na geração do PDF, tente novamente. Se persistir, verifique a análise no aplicativo.
         """)
