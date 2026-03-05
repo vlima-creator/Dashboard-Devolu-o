@@ -18,9 +18,7 @@ def render_tab_analise_anuncios():
         key="url_anuncio_input"
     )
     
-    st.markdown("### 📝 Prompt de Análise")
-    st.markdown("O prompt abaixo está configurado para análise profunda de anúncios do Mercado Livre. Customize conforme necessário.")
-    
+    # Prompt de análise em um expander
     prompt_padrao = """Analise este anúncio do Mercado Livre e me entregue a resposta nas seções abaixo.
 
 ## Diagnóstico de RELEVÂNCIA NA BUSCA (relevância direta)
@@ -55,12 +53,19 @@ Entregue um checklist em até 10 itens, no formato "[ ] ação", com tudo o que 
 Se este for um anúncio de catálogo, sinalize isso logo no início da resposta e NÃO sugira alterações em campos travados (como título ou ficha técnica padrão).
 Foque apenas em melhorias possíveis em anúncios de catálogo (preço, atacado, promoções, logística, reputação, conteúdo complementar permitido, etc.)."""
     
-    prompt_usuario = st.text_area(
-        "Prompt de Análise",
-        value=prompt_padrao,
-        height=250,
-        key="prompt_usuario_input"
-    )
+    with st.expander("📝 Prompt de Análise (Customizável)"):
+        prompt_usuario = st.text_area(
+            "Prompt de Análise",
+            value=prompt_padrao,
+            height=250,
+            key="prompt_usuario_input"
+        )
+    
+    # Se o expander não foi aberto, usar o prompt padrão
+    if 'prompt_usuario_input' not in st.session_state:
+        prompt_usuario = prompt_padrao
+    else:
+        prompt_usuario = st.session_state.get('prompt_usuario_input', prompt_padrao)
     
     # Botão de análise
     st.markdown("### 🚀 Executar Análise")
@@ -78,12 +83,13 @@ Foque apenas em melhorias possíveis em anúncios de catálogo (preço, atacado,
     if btn_analisar:
         if not url_anuncio:
             st.error("❌ Por favor, cole um link válido do anúncio.")
-        elif not prompt_usuario:
-            st.error("❌ Por favor, insira um prompt de análise.")
         else:
+            # Usar o prompt do session_state se foi customizado, senão usar o padrão
+            prompt_final = st.session_state.get('prompt_usuario_input', prompt_padrao)
+            
             with st.spinner("⏳ Analisando anúncio... Isso pode levar alguns segundos."):
                 try:
-                    resultado = processar_analise_completa(url_anuncio, prompt_usuario)
+                    resultado = processar_analise_completa(url_anuncio, prompt_final)
                     
                     if resultado['status'] == 'erro':
                         st.error(f"❌ Erro ao processar: {resultado.get('mensagem', 'Erro desconhecido')}")
