@@ -9,7 +9,7 @@ def render_tab_analise_anuncios():
     st.markdown('<div class="chart-title">Análise Inteligente de Anúncios com IA</div>', unsafe_allow_html=True)
     
     st.markdown("""
-    Esta ferramenta utiliza **Google Gemini 1.5 Flash** (Gratuito) para analisar anúncios de produtos e identificar 
+    Esta ferramenta utiliza **Google Gemini 2.5 Flash** (Gratuito) para analisar anúncio de produtos e identificar 
     pontos de melhoria que podem reduzir devoluções e aumentar conversões.
     """)
     
@@ -166,7 +166,7 @@ Foque apenas em melhorias possíveis em anúncios de catálogo (preço, atacado,
         - **Análise:** A IA leva em conta o título, descrição, preço e avaliações do anúncio
         - **Visualização:** Toda a análise é exibida diretamente no painel para fácil visualização
         - **Histórico:** Você pode manter múltiplas análises abertas em abas diferentes do navegador para comparação
-        - **Gratuito:** Usa o Google Gemini 1.5 Flash, que tem um plano gratuito generoso
+        - **Gratuito:** Usa o Google Gemini 2.5 Flash, que tem um plano gratuito generoso
         
         ### Possíveis problemas e soluções:
         - **Dados não extraídos:** O Mercado Livre pode estar bloqueando requisições. A IA ainda fornecerá análise baseada no link.

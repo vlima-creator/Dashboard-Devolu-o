@@ -200,8 +200,8 @@ Com base nesses dados e seguindo o prompt abaixo, faça uma análise completa:
 """
         
         # Fazer a chamada direta à API do Google Gemini v1 via HTTPS
-        # Usando v1 em vez de v1beta para maior estabilidade
-        api_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+        # Usando gemini-2.5-flash que é o modelo mais recente e estável disponível
+        api_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={api_key}"
         
         headers = {
             "Content-Type": "application/json"
