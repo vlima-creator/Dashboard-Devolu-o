@@ -285,10 +285,10 @@ def analisar_ads(vendas, matriz, full, max_date, dias_atras):
     
     return pd.DataFrame(ads_data) if ads_data else pd.DataFrame()
 
-def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=None):
+def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=None, agrupar_por='SKU'):
     """
-    Análise de SKUs com maior risco.
-    Os dados já chegam filtrados pelo cabeçalho global.
+    Análise de SKUs ou Produtos com maior risco.
+    agrupar_por: 'SKU' ou 'Título'
     """
     
     if matriz is None:
@@ -309,62 +309,66 @@ def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=None):
                 dev_map[num_venda] = []
             dev_map[num_venda].append(row)
     
-    # Análise por SKU
+    # Análise por SKU ou Título
     skus_data = {}
     
-    if 'SKU' in vendas_periodo.columns:
-        for _, venda in vendas_periodo.iterrows():
-            sku = str(venda.get('SKU', 'N/A'))
-            if pd.isna(venda.get('SKU')):
-                sku = 'N/A'
+    # Determinar coluna de agrupamento
+    col_agrup = 'SKU' if agrupar_por == 'SKU' else 'Título'
+    if col_agrup not in vendas_periodo.columns:
+        col_agrup = 'SKU' # Fallback
+        
+    for _, venda in vendas_periodo.iterrows():
+        item_id = str(venda.get(col_agrup, 'N/A'))
+        if pd.isna(venda.get(col_agrup)):
+            item_id = 'N/A'
+        
+        if item_id not in skus_data:
+            skus_data[item_id] = {
+                'vendas': 0,
+                'devolucoes': 0,
+                'receita': 0.0,
+                'impacto': 0.0,
+                'reembolso': 0.0,
+                'custo_dev': 0.0,
+                'vendas_devolvidas': set(),
+            }
+        
+        skus_data[item_id]['vendas'] += 1
+        
+        receita = venda.get('Receita por produtos (BRL)', 0)
+        if pd.isna(receita): receita = 0.0
+        skus_data[item_id]['receita'] += float(receita)
+        
+        num_venda = str(venda.get('N.º de venda', ''))
+        if num_venda in dev_map and num_venda not in skus_data[item_id]['vendas_devolvidas']:
+            skus_data[item_id]['vendas_devolvidas'].add(num_venda)
+            skus_data[item_id]['devolucoes'] += 1
             
-            if sku not in skus_data:
-                skus_data[sku] = {
-                    'vendas': 0,
-                    'devolucoes': 0,
-                    'receita': 0.0,
-                    'impacto': 0.0,
-                    'reembolso': 0.0,
-                    'custo_dev': 0.0,
-                    'vendas_devolvidas': set(),
-                }
-            
-            skus_data[sku]['vendas'] += 1
-            
-            receita = venda.get('Receita por produtos (BRL)', 0)
-            if pd.isna(receita): receita = 0.0
-            skus_data[sku]['receita'] += float(receita)
-            
-            num_venda = str(venda.get('N.º de venda', ''))
-            if num_venda in dev_map and num_venda not in skus_data[sku]['vendas_devolvidas']:
-                skus_data[sku]['vendas_devolvidas'].add(num_venda)
-                skus_data[sku]['devolucoes'] += 1
+            for dev in dev_map[num_venda]:
+                # Impacto: Cancelamentos e reembolsos
+                reemb = dev.get('Cancelamentos e reembolsos (BRL)', None)
+                if reemb is None or pd.isna(reemb):
+                    reemb = 0.0
+                reemb = float(reemb)
+                if reemb == 0:
+                    fallback = dev.get('Receita por produtos (BRL)', 0)
+                    if pd.isna(fallback): fallback = 0.0
+                    reemb = float(fallback)
+                skus_data[item_id]['impacto'] += reemb
+                skus_data[item_id]['reembolso'] += reemb
                 
-                for dev in dev_map[num_venda]:
-                    # Impacto: Cancelamentos e reembolsos
-                    reemb = dev.get('Cancelamentos e reembolsos (BRL)', None)
-                    if reemb is None or pd.isna(reemb):
-                        reemb = 0.0
-                    reemb = float(reemb)
-                    if reemb == 0:
-                        fallback = dev.get('Receita por produtos (BRL)', 0)
-                        if pd.isna(fallback): fallback = 0.0
-                        reemb = float(fallback)
-                    skus_data[sku]['impacto'] += reemb
-                    skus_data[sku]['reembolso'] += reemb
-                    
-                    # Custo de devolução (custos de envio)
-                    custo = dev.get('Custos de envio (BRL)', None)
-                    if custo is None or pd.isna(custo):
-                        custo = 0.0
-                    skus_data[sku]['custo_dev'] += float(custo)
+                # Custo de devolução (custos de envio)
+                custo = dev.get('Custos de envio (BRL)', None)
+                if custo is None or pd.isna(custo):
+                    custo = 0.0
+                skus_data[item_id]['custo_dev'] += float(custo)
     
     # Calcular total de devoluções para concentração
     total_devolucoes = sum(d['devolucoes'] for d in skus_data.values())
     
     # Converter para DataFrame
     skus_list = []
-    for sku, d in skus_data.items():
+    for item_id, d in skus_data.items():
         if d['devolucoes'] == 0:
             continue
         
@@ -380,7 +384,7 @@ def analisar_skus(vendas, matriz, full, max_date, dias_atras, top_n=None):
             classe = 'Neutra'
         
         skus_list.append({
-            'SKU': sku,
+            col_agrup: item_id,
             'Vendas': d['vendas'],
             'Dev.': d['devolucoes'],
             'Taxa': round(taxa, 1),

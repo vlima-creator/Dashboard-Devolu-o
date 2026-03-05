@@ -316,6 +316,17 @@ with st.sidebar:
 
     if st.session_state.processed_data is not None:
         st.markdown("---")
+        st.subheader("⚙️ Configurações")
+        visualizacao = st.radio(
+            "Visualizar por:",
+            ["SKU", "Nome do Produto"],
+            index=0,
+            key="config_visualizacao",
+            help="Altera como os produtos são agrupados nas tabelas e gráficos"
+        )
+        agrupar_por = 'SKU' if visualizacao == "SKU" else 'Título'
+        
+        st.markdown("---")
         if st.button("🗑️ Limpar Dados", use_container_width=True):
             st.session_state.processed_data = None
             st.rerun()
@@ -431,24 +442,27 @@ else:
             
         with col_right:
             st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-            st.markdown('<div class="chart-title">Top 5 SKUs por Devoluções</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="chart-title">Top 5 {visualizacao}s por Devoluções</div>', unsafe_allow_html=True)
             
-            df_skus_top, _ = analisar_skus(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_global, 5)
+            df_skus_top, _ = analisar_skus(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_global, 5, agrupar_por=agrupar_por)
             
             if not df_skus_top.empty:
                 df_skus_top = df_skus_top.sort_values('Dev.', ascending=True)
                 fig_bar = go.Figure(go.Bar(
-                    x=df_skus_top['Dev.'], y=df_skus_top['SKU'],
+                    x=df_skus_top['Dev.'], y=df_skus_top[agrupar_por],
                     orientation='h', marker_color='#f59e0b'
                 ))
                 fig_bar.update_layout(
+                    template='plotly_dark',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
                     margin=dict(t=0, b=0, l=0, r=0), height=300,
                     xaxis=dict(showgrid=True, gridcolor='#334155'),
                     yaxis=dict(showgrid=False)
                 )
                 st.plotly_chart(fig_bar, use_container_width=True)
             else:
-                st.info("Sem dados de SKUs para exibir")
+                st.info(f"Sem dados de {visualizacao}s para exibir")
             st.markdown('</div>', unsafe_allow_html=True)
 
     # ─── TAB 2: JANELAS ───
@@ -569,7 +583,7 @@ else:
                 """, unsafe_allow_html=True)
             with c2:
                 # Calcular Top 10 concentração para Matriz
-                df_skus_m, total_dev_m = analisar_skus(data['vendas'], data['matriz'], None, data['max_date'], janela_global)
+                df_skus_m, total_dev_m = analisar_skus(data['vendas'], data['matriz'], None, data['max_date'], janela_global, agrupar_por=agrupar_por)
                 top10_m = (df_skus_m.sort_values('Dev.', ascending=False).head(10)['Dev.'].sum() / total_dev_m * 100) if total_dev_m > 0 and len(df_skus_m) > 0 else 0
                 st.markdown(f"""
                     <div style="padding: 15px; background-color: #334155; border-radius: 8px; text-align: center;">
@@ -606,7 +620,7 @@ else:
                     </div>
                 """, unsafe_allow_html=True)
             with c2:
-                df_skus_f, total_dev_f = analisar_skus(data['vendas'], None, data['full'], data['max_date'], janela_global)
+                df_skus_f, total_dev_f = analisar_skus(data['vendas'], None, data['full'], data['max_date'], janela_global, agrupar_por=agrupar_por)
                 top10_f = (df_skus_f.sort_values('Dev.', ascending=False).head(10)['Dev.'].sum() / total_dev_f * 100) if total_dev_f > 0 and len(df_skus_f) > 0 else 0
                 st.markdown(f"""
                     <div style="padding: 15px; background-color: #334155; border-radius: 8px; text-align: center;">
@@ -780,7 +794,7 @@ else:
 
     # ─── TAB 7: SKUS ───
     with tab7:
-        df_skus_all, total_dev_skus = analisar_skus(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_global)
+        df_skus_all, total_dev_skus = analisar_skus(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_global, agrupar_por=agrupar_por)
         
         total_skus_com_dev = len(df_skus_all)
         if total_dev_skus > 0 and len(df_skus_all) > 0:
@@ -808,7 +822,7 @@ else:
         with c3:
             st.markdown(f"""
                 <div class="metric-card" style="text-align: center;">
-                    <div class="metric-label">SKUs com devolução</div>
+                    <div class="metric-label">{visualizacao}s com devolução</div>
                     <div class="metric-value" style="font-size: 2rem;">{total_skus_com_dev}</div>
                 </div>
             """, unsafe_allow_html=True)
@@ -827,7 +841,7 @@ else:
                 df_display['Reemb.'] = df_display['Reemb.'].apply(lambda x: formatar_brl(x))
                 df_display['Custo Dev.'] = df_display['Custo Dev.'].apply(lambda x: formatar_brl(x))
                 df_display['Risco'] = df_display['Risco'].apply(lambda x: formatar_risco(x))
-                return df_display[['SKU', 'Vendas', 'Dev.', 'Taxa', 'Impacto', 'Reemb.', 'Custo Dev.', 'Risco', 'Classe']]
+                return df_display[[agrupar_por, 'Vendas', 'Dev.', 'Taxa', 'Impacto', 'Reemb.', 'Custo Dev.', 'Risco', 'Classe']]
             
             with sub_tab1:
                 df_vol = df_skus_all.sort_values('Dev.', ascending=False).head(20)
@@ -837,7 +851,7 @@ else:
                 if len(df_taxa) > 0:
                     st.dataframe(formatar_df_skus(df_taxa), use_container_width=True, hide_index=True)
                 else:
-                    st.info("Nenhum SKU com taxa ≥ 20% e pelo menos 5 vendas")
+                    st.info(f"Nenhum {visualizacao} com taxa ≥ 20% e pelo menos 5 vendas")
             with sub_tab3:
                 df_perda = df_skus_all.sort_values('Impacto', ascending=True).head(20)
                 st.dataframe(formatar_df_skus(df_perda), use_container_width=True, hide_index=True)
