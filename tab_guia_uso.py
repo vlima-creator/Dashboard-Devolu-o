@@ -273,12 +273,6 @@ def render_tab_guia_uso():
         **P: Posso usar dados de múltiplos períodos?**
         - Sim, mas combine os arquivos em um único Excel antes
         - Ou processe um período por vez e compare
-        
-        ### 📞 Contato e Feedback
-        
-        - **Problemas técnicos**: Verifique os logs do Streamlit Cloud
-        - **Sugestões**: Compartilhe suas ideias para melhorias
-        - **Dúvidas**: Consulte este guia ou a documentação do Mercado Livre
         """)
     
     st.markdown('</div>', unsafe_allow_html=True)
