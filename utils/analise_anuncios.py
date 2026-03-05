@@ -189,7 +189,7 @@ Com base nesses dados e seguindo o prompt abaixo, faça uma análise completa:
         
         # Fazer a chamada à API
         response = client.chat.completions.create(
-            model="gpt-4-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "system",
