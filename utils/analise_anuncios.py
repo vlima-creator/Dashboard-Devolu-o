@@ -118,11 +118,11 @@ Com base nesses dados e seguindo o prompt abaixo, faça uma análise completa:
         
         # Fazer a chamada à API
         response = client.chat.completions.create(
-            model="gpt-4.1-mini",
+            model="gpt-4-turbo",
             messages=[
                 {
                     "role": "system",
-                    "content": "Você é um especialista em análise de anúncios de e-commerce. Forneça análises detalhadas, estruturadas e acionáveis."
+                    "content": "Você é um especialista em análise de anúncios de e-commerce do Mercado Livre. Forneça análises detalhadas, estruturadas, acionáveis e em Markdown."
                 },
                 {
                     "role": "user",
@@ -130,7 +130,7 @@ Com base nesses dados e seguindo o prompt abaixo, faça uma análise completa:
                 }
             ],
             temperature=0.7,
-            max_tokens=2000
+            max_tokens=4000
         )
         
         return response.choices[0].message.content

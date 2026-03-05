@@ -25,21 +25,46 @@ def render_tab_analise_anuncios():
         )
     
     st.markdown("### 📝 Prompt de Análise")
-    st.markdown("Customize o prompt abaixo ou use o padrão. O prompt será enviado junto com os dados do anúncio para a IA.")
+    st.markdown("O prompt abaixo está configurado para análise profunda de anúncios do Mercado Livre. Customize conforme necessário.")
     
-    prompt_padrao = """Analise este anúncio de forma detalhada e identifique:
-1. **Pontos Positivos**: O que está bem no anúncio
-2. **Pontos Críticos**: Problemas que podem gerar devoluções
-3. **Sugestões de Melhoria**: Ações específicas para melhorar o anúncio
-4. **Impacto Estimado**: Como essas melhorias podem reduzir devoluções
-5. **Prioridade**: Ordene as ações por impacto (Alto, Médio, Baixo)
+    prompt_padrao = """Analise este anúncio do Mercado Livre e me entregue a resposta nas seções abaixo.
 
-Seja específico e acionável nas recomendações."""
+## Diagnóstico de RELEVÂNCIA NA BUSCA (relevância direta)
+Liste o que está prejudicando a relevância em: título, categoria, atributos/ficha técnica, variações, catálogo (quando aplicável) e compliance/políticas.
+
+## Diagnóstico de CONVERSÃO (relevância indireta)
+Liste o que está prejudicando a conversão em: preço, entrega/logística, reputação, fotos, vídeos/clips, reviews e clareza da oferta.
+
+## Top 10 melhorias prioritárias
+Entregue uma lista numerada com as 10 melhorias mais importantes, em ordem de prioridade (1 = mais crítico).
+Para cada item, informe:
+- "O que fazer" (ação objetiva)
+- "Por quê" (justificativa)
+- "Impacto principal" (busca, conversão ou ambos).
+
+## Sugestão de TÍTULOS
+Sugira 1 título principal otimizado (até 60 caracteres) e 3 variações:
+1. Variação mais genérica
+2. Variação mais "cauda longa"
+3. Variação com foco em benefício
+
+Todos os títulos devem ter no máximo 60 caracteres e priorizar termos relevantes para busca.
+
+## Preço, atacado e promoções
+Avalie se faz sentido configurar Preço de Atacado (considerando público, ticket e margem) e sugira, quando fizer sentido, faixas de quantidade e preços coerentes.
+Verifique se faz sentido ativar Promoção (considerando se já existe promoção no anúncio) e indique o melhor formato disponível e o cuidado para não depender só de desconto.
+
+## Checklist final
+Entregue um checklist em até 10 itens, no formato "[ ] ação", com tudo o que deve ser revisado antes de publicar/atualizar o anúncio.
+
+### ⚠️ Regra importante sobre catálogo
+Se este for um anúncio de catálogo, sinalize isso logo no início da resposta e NÃO sugira alterações em campos travados (como título ou ficha técnica padrão).
+Foque apenas em melhorias possíveis em anúncios de catálogo (preço, atacado, promoções, logística, reputação, conteúdo complementar permitido, etc.)."""
     
     prompt_usuario = st.text_area(
         "Prompt de Análise",
         value=prompt_padrao,
-        height=200,
+        height=250,
         key="prompt_usuario_input"
     )
     
@@ -125,7 +150,8 @@ Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}
     with st.expander("💡 Dicas de Uso"):
         st.markdown("""
         - **Link:** Funciona com anúncios do Mercado Livre, Amazon e outras plataformas
-        - **Prompt:** Customize o prompt para focar em diferentes aspectos (qualidade, preço, descrição, etc.)
+        - **Prompt:** O prompt padrão está otimizado para análise profunda de anúncios do Mercado Livre
         - **Análise:** A IA leva em conta o título, descrição, preço e avaliações do anúncio
-        - **Histórico:** Você pode manter múltiplas análises abertas em abas diferentes do navegador
+        - **Exportação:** Você pode baixar a análise em Markdown para documentação ou compartilhamento
+        - **Histórico:** Mantenha múltiplas análises abertas em abas diferentes do navegador para comparação
         """)

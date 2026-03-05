@@ -3,6 +3,11 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
+import os
+from dotenv import load_dotenv
+
+# Carregar variáveis de ambiente
+load_dotenv()
 from utils.parser import processar_arquivos
 from utils.metricas import calcular_metricas, calcular_qualidade_arquivo
 from utils.export import exportar_xlsx
