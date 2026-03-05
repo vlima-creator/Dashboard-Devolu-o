@@ -225,7 +225,7 @@ Com base nesses dados e seguindo o prompt abaixo, faça uma análise completa:
             }
         }
         
-        response = requests.post(api_url, json=payload, headers=headers, timeout=30)
+        response = requests.post(api_url, json=payload, headers=headers, timeout=90)
         
         if response.status_code == 200:
             result = response.json()
