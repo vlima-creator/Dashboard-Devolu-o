@@ -409,7 +409,7 @@ else:
     # ─────────────────────────────────────────────────────
     tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
         "Resumo", "Janelas", "Matriz/Full", "Frete", 
-        "Motivos", "Ads", "SKUs", "Simulador"
+        "Motivos", "Ads", "Anúncios", "Simulador"
     ])
     
     # ─── TAB 1: RESUMO ───
@@ -806,7 +806,7 @@ else:
             """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ─── TAB 7: SKUS ───
+    # ─── TAB 7: ANÚNCIOS ───
     with tab7:
         df_skus_all, total_dev_skus = analisar_skus(data['vendas'], data['matriz'], data['full'], data['max_date'], janela_global, agrupar_por=agrupar_por)
         
