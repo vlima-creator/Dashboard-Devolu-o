@@ -11,7 +11,7 @@ from utils.formatacao import formatar_brl, formatar_percentual, formatar_pct_dir
 
 # Configuração da página
 st.set_page_config(
-    page_title="Dashboard Vendas x Devoluções",
+    page_title="Gestão de Devolução Inteligente",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -276,7 +276,7 @@ if 'processed_data' not in st.session_state:
 # SIDEBAR - UPLOAD E CONFIGURAÇÕES
 # ─────────────────────────────────────────────────────────
 with st.sidebar:
-    st.title("📊 Menu")
+    st.title("🚀 Gestão de Devolução Inteligente")
     st.markdown("---")
     
     st.subheader("📁 Upload de Dados")
