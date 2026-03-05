@@ -132,9 +132,13 @@ def calcular_metricas(vendas, matriz, full, max_date, dias_atras):
                 else:
                     neutras += 1
                 
-                impacto_devolucao += reembolso
-                perda_total += reembolso
-                perda_parcial += perda_parcial_item
+                # A perda total é o que foi reembolsado MAIS os custos logísticos
+                # reembolso e perda_parcial_item já costumam vir negativos ou positivos dependendo do relatório
+                # No Mercado Livre, Cancelamentos e reembolsos costuma ser o valor negativo do produto
+                # Tarifas de envio e Tarifa de venda também costumam ser negativas
+                impacto_devolucao += abs(reembolso)
+                perda_total += abs(reembolso) + abs(perda_parcial_item)
+                perda_parcial += abs(perda_parcial_item)
     
     # Contagem de devoluções = número de vendas que tiveram devolução
     devolucoes_count = len(venda_com_devolucao)
@@ -148,9 +152,9 @@ def calcular_metricas(vendas, matriz, full, max_date, dias_atras):
         'devolucoes_vendas': devolucoes_count,
         'taxa_devolucao': taxa_devolucao,  # Valor entre 0 e 1
         'faturamento_devolucoes': faturamento_devolucoes,
-        'impacto_devolucao': -impacto_devolucao,  # Negativo (perda)
-        'perda_total': -perda_total,               # Negativo (perda)
-        'perda_parcial': -perda_parcial,           # Negativo (perda)
+        'impacto_devolucao': -abs(impacto_devolucao),  # Negativo (perda)
+        'perda_total': -abs(perda_total),               # Negativo (perda)
+        'perda_parcial': -abs(perda_parcial),           # Negativo (perda)
         'saudaveis': saudaveis,
         'criticas': criticas,
         'neutras': neutras,
