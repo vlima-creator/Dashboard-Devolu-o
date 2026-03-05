@@ -19,45 +19,55 @@ def render_tab_analise_anuncios():
     )
     
     # Prompt de análise em um expander
-    prompt_padrao = """Analise este anúncio do Mercado Livre e me entregue a resposta nas seções abaixo.
+    prompt_padrao = """Prompt de Análise de Anúncios - Mercado Livre (V.2.0)
+Analise o anúncio do Mercado Livre que enviarei abaixo e entregue a resposta rigorosamente nas seções seguintes.
 
-## Diagnóstico de RELEVÂNCIA NA BUSCA (relevância direta)
-Liste o que está prejudicando a relevância em: título, categoria, atributos/ficha técnica, variações, catálogo (quando aplicável) e compliance/políticas.
+⚠️ Regra importante sobre catálogo
+Se este for um anúncio de catálogo, sinalize isso logo no início da resposta e NÃO sugira alterações em campos travados (como título ou ficha técnica padrão). Foque apenas em melhorias permitidas (preço, atacado, promoções, logística, reputação, conteúdo complementar, etc.).
 
-## Diagnóstico de CONVERSÃO (relevância indireta)
-Liste o que está prejudicando a conversão em: preço, entrega/logística, reputação, fotos, vídeos/clips, reviews e clareza da oferta.
+1. Diagnóstico de RELEVÂNCIA NA BUSCA (Relevância Direta)
+Liste o que está prejudicando a exposição orgânica em:
+- Título: (Análise de palavras-chave e uso de caracteres).
+- Categoria: (Se está na árvore de categoria correta).
+- Atributos/Ficha Técnica: (Campos vazios ou preenchidos incorretamente).
+- Variações: (Uso correto de cores, tamanhos ou voltagem).
+- Compliance/Políticas: (Infrações que podem causar queda de exposição).
 
-## Top 10 melhorias prioritárias
-Entregue uma lista numerada com as 10 melhorias mais importantes, em ordem de prioridade (1 = mais crítico).
-Para cada item, informe:
-- "O que fazer" (ação objetiva)
-- "Por quê" (justificativa)
-- "Impacto principal" (busca, conversão ou ambos).
+2. Diagnóstico de CONVERSÃO (Relevância Indireta)
+Liste o que impede o clique de virar venda em:
+- Preço e Promoções: (Competitividade).
+- Entrega/Logística: (Uso de Full, Flex ou prazos abusivos).
+- Reputação e Reviews: (Impacto das avaliações e termômetro do vendedor).
+- Fotos e Vídeos: (Qualidade visual, fundo branco, proporção e presença de vídeos/clips).
+- Clareza da Oferta: (Descrição, quebra de objeções e perguntas frequentes).
 
-## Sugestão de TÍTULOS
-Sugira 1 título principal otimizado (até 60 caracteres) e 3 variações:
-1. Variação mais genérica
-2. Variação mais "cauda longa"
-3. Variação com foco em benefício
+3. Top 10 Melhorias Prioritárias
+Uma lista numerada do 1 ao 10 (em ordem de prioridade), contendo:
+- O que fazer: Ação objetiva.
+- Por quê: Justificativa estratégica.
+- Impacto: (Busca, Conversão ou Ambos).
 
-Todos os títulos devem ter no máximo 60 caracteres e priorizar termos relevantes para busca.
+4. Sugestão de TÍTULOS e Análise de Curva
+Para cada sugestão abaixo, avalie primeiro a curva do anúncio:
+Critério de Decisão: Se o anúncio já possui vendas constantes e histórico relevante (Anúncio Quente), a orientação deve ser NÃO ALTERAR O TÍTULO e sim criar um NOVO ANÚNCIO (CLONE) com a nova sugestão para evitar a perda de indexação. Se o anúncio tem poucas vendas ou está estagnado (Anúncio Frio), a orientação deve ser a ALTERAÇÃO DIRETA no título atual.
+Sugira:
+- Título Principal Otimizado (Até 60 caracteres).
+- Variação Genérica (Foco em termos amplos).
+- Variação Cauda Longa (Foco em especificidade).
+- Variação Benefício (Foco em dor/solução).
 
-## Preço, atacado e promoções
-Avalie se faz sentido configurar Preço de Atacado (considerando público, ticket e margem) e sugira, quando fizer sentido, faixas de quantidade e preços coerentes.
-Verifique se faz sentido ativar Promoção (considerando se já existe promoção no anúncio) e indique o melhor formato disponível e o cuidado para não depender só de desconto.
+5. Preço, Atacado e Promoções
+- Preço de Atacado: Avalie se o ticket médio e público permitem atacado. Sugira faixas (Ex: 3un, 5un) e descontos coerentes.
+- Promoções: Verifique se há "Central de Promoções" ativa e qual o melhor formato (Oferta do Dia, Relâmpago ou Leve mais por menos). Alerte sobre a margem para não depender apenas de desconto.
 
-## Checklist final
-Entregue um checklist em até 10 itens, no formato "[ ] ação", com tudo o que deve ser revisado antes de publicar/atualizar o anúncio.
-
-### ⚠️ Regra importante sobre catálogo
-Se este for um anúncio de catálogo, sinalize isso logo no início da resposta e NÃO sugira alterações em campos travados (como título ou ficha técnica padrão).
-Foque apenas em melhorias possíveis em anúncios de catálogo (preço, atacado, promoções, logística, reputação, conteúdo complementar permitido, etc.)."""
+6. Checklist Final
+Um checklist de até 10 itens no formato [ ] ação com os pontos cruciais para revisão antes da publicação/atualização."""
     
     with st.expander("📝 Prompt de Análise (Customizável)"):
         prompt_usuario = st.text_area(
             "Prompt de Análise",
             value=prompt_padrao,
-            height=250,
+            height=350,
             key="prompt_usuario_input"
         )
     
@@ -140,7 +150,8 @@ Foque apenas em melhorias possíveis em anúncios de catálogo (preço, atacado,
     with st.expander("💡 Dicas de Uso"):
         st.markdown("""
         - **Link:** Funciona com anúncios do Mercado Livre, Amazon e outras plataformas
-        - **Prompt:** O prompt padrão está otimizado para análise profunda de anúncios do Mercado Livre
+        - **Prompt:** O prompt padrão (V.2.0) está otimizado para análise profunda de anúncios do Mercado Livre
+        - **Customização:** Você pode editar o prompt no expander "Prompt de Análise" para adaptar às suas necessidades
         - **PDF:** Você pode exportar a análise completa em PDF para compartilhar ou arquivar
         - **Histórico:** Você pode manter múltiplas análises abertas em abas diferentes do navegador para comparação
         """)
