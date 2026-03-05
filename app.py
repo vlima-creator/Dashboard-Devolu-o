@@ -15,6 +15,7 @@ from utils.analises import analisar_frete, analisar_motivos, analisar_ads, anali
 from utils.formatacao import formatar_brl, formatar_percentual, formatar_pct_direto, formatar_numero, formatar_risco
 from utils.analise_anuncios import processar_analise_completa
 from tab_analise_anuncios import render_tab_analise_anuncios
+from tab_guia_uso import render_tab_guia_uso
 
 # Configuração da página
 st.set_page_config(
@@ -424,10 +425,14 @@ else:
     # ─────────────────────────────────────────────────────
     # ABAS
     # ─────────────────────────────────────────────────────
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
-        "Resumo", "Janelas", "Matriz/Full", "Frete", 
+    tab_guia, tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
+        "📖 Guia de Uso", "Resumo", "Janelas", "Matriz/Full", "Frete", 
         "Motivos", "Ads", "Anúncios", "Simulador", "IA Análise"
     ])
+    
+    # ─── TAB GUIA: GUIA DE USO ───
+    with tab_guia:
+        render_tab_guia_uso()
     
     # ─── TAB 1: RESUMO ───
     with tab1:
