@@ -123,21 +123,23 @@ def calcular_metricas(vendas, matriz, full, max_date, dias_atras):
                 # Perda parcial é a soma dos custos (já vêm negativos)
                 perda_parcial_item = tarifas_envio + tarifa_venda
                 
-                # Classificação
+                # A perda total é o impacto real financeiro.
+                # Se a devolução for 'Saudável', o produto volta ao estoque, então a perda é apenas os custos operacionais.
+                # Se for 'Crítica', a perda é o valor total do produto mais os custos operacionais.
+                # Se for 'Neutra', assumimos conservadoramente uma perda parcial até a conclusão.
                 classe = classificar_estado(dev.get('Estado'))
                 if classe == 'Saudável':
                     saudaveis += 1
+                    perda_total_item = abs(perda_parcial_item)
                 elif classe == 'Crítica':
                     criticas += 1
+                    perda_total_item = abs(reembolso) + abs(perda_parcial_item)
                 else:
                     neutras += 1
+                    perda_total_item = abs(perda_parcial_item)
                 
-                # A perda total é o que foi reembolsado MAIS os custos logísticos
-                # reembolso e perda_parcial_item já costumam vir negativos ou positivos dependendo do relatório
-                # No Mercado Livre, Cancelamentos e reembolsos costuma ser o valor negativo do produto
-                # Tarifas de envio e Tarifa de venda também costumam ser negativas
                 impacto_devolucao += abs(reembolso)
-                perda_total += abs(reembolso) + abs(perda_parcial_item)
+                perda_total += perda_total_item
                 perda_parcial += abs(perda_parcial_item)
     
     # Contagem de devoluções = número de vendas que tiveram devolução
