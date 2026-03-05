@@ -171,19 +171,29 @@ st.markdown("""
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
         background-color: transparent;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        width: 100%;
     }
 
     .stTabs [data-baseweb="tab"] {
         height: 45px;
-        white-space: pre;
+        white-space: nowrap;
         background-color: #1e293b;
         border-radius: 8px 8px 0px 0px;
         color: #94a3b8;
         font-weight: 600;
-        padding: 10px 20px;
+        padding: 10px 24px;
         border: 1px solid #334155;
         border-bottom: none;
         transition: all 0.2s ease;
+        flex: 1;
+        min-width: 140px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .stTabs [aria-selected="true"] {
