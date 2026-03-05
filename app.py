@@ -205,7 +205,7 @@ def render_metric_card(label, value, subvalue, icon):
 # ─────────────────────────────────────────────────────────
 # Função de filtragem global dos dados
 # ─────────────────────────────────────────────────────────
-def aplicar_filtros(data, janela, canal, somente_ads, top10_skus):
+def aplicar_filtros(data, janela, canal, somente_ads, top10_skus, agrupar_por='SKU'):
     """
     Aplica os filtros globais do cabeçalho sobre os dados brutos.
     Retorna um dicionário com os mesmos campos de 'data', mas filtrados.
@@ -236,16 +236,19 @@ def aplicar_filtros(data, janela, canal, somente_ads, top10_skus):
         if 'Venda por publicidade' in vendas.columns:
             vendas = vendas[vendas['Venda por publicidade'] == 'Sim']
 
-    # 4) Filtro TOP 10 SKUs (filtra vendas apenas dos 10 SKUs com mais devoluções)
+    # 4) Filtro TOP 10 (filtra vendas apenas dos 10 itens com mais devoluções)
     if top10_skus:
         todas_dev = pd.concat([matriz, full], ignore_index=True)
-        if len(todas_dev) > 0 and 'N.º de venda' in todas_dev.columns and 'SKU' in vendas.columns:
-            # Mapear devoluções para SKUs via vendas
+        col_id = agrupar_por if agrupar_por in vendas.columns else 'SKU'
+        
+        if len(todas_dev) > 0 and 'N.º de venda' in todas_dev.columns and col_id in vendas.columns:
+            # Mapear devoluções para itens via vendas
             dev_nums = set(todas_dev['N.º de venda'].astype(str).unique())
             vendas_com_dev = vendas[vendas['N.º de venda'].astype(str).isin(dev_nums)]
-            if 'SKU' in vendas_com_dev.columns:
-                top_skus = vendas_com_dev['SKU'].value_counts().head(10).index.tolist()
-                vendas = vendas[vendas['SKU'].isin(top_skus)]
+            
+            if col_id in vendas_com_dev.columns:
+                top_items = vendas_com_dev[col_id].value_counts().head(10).index.tolist()
+                vendas = vendas[vendas[col_id].isin(top_items)]
                 # Filtrar devoluções para manter apenas as relacionadas às vendas filtradas
                 vendas_nums = set(vendas['N.º de venda'].astype(str).unique())
                 if len(matriz) > 0 and 'N.º de venda' in matriz.columns:
@@ -388,12 +391,12 @@ else:
         somente_ads_global = st.toggle("Somente Ads", value=False, key="filtro_ads")
     
     with fc4:
-        top10_skus_global = st.toggle("Top 10 SKUs", value=False, key="filtro_top10")
+        top10_skus_global = st.toggle(f"Top 10 {visualizacao}s", value=False, key="filtro_top10")
     
     st.markdown('</div>', unsafe_allow_html=True)
     
     # Aplicar filtros globais
-    data = aplicar_filtros(data_raw, janela_global, canal_global, somente_ads_global, top10_skus_global)
+    data = aplicar_filtros(data_raw, janela_global, canal_global, somente_ads_global, top10_skus_global, agrupar_por=agrupar_por)
     
     # Garantir DataFrames válidos para funções
     df_matriz = data['matriz'] if data['matriz'] is not None else pd.DataFrame()
@@ -488,7 +491,7 @@ else:
         
         for janela in janelas_list:
             # Usar data_raw para recalcular por janela, mas aplicar canal/ads/top10
-            d_temp = aplicar_filtros(data_raw, janela, canal_global, somente_ads_global, top10_skus_global)
+            d_temp = aplicar_filtros(data_raw, janela, canal_global, somente_ads_global, top10_skus_global, agrupar_por=agrupar_por)
             m = calcular_metricas(d_temp['vendas'], d_temp['matriz'], d_temp['full'], d_temp['max_date'], janela)
             janelas_data_raw.append({
                 'Período': f'{janela}d',
